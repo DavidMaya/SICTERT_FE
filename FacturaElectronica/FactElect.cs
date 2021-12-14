@@ -15,6 +15,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.Timers;
+using FacturaElectronica.Clases;
+using FacturaElectronica.Documento;
 
 namespace FacturaElectronica
 {
@@ -102,8 +104,7 @@ namespace FacturaElectronica
 				// buscar si hay facturas electrónicas por procesar
 
 				// facturas del módulo Frecuencias
-				string sql = "SELECT * FROM FACTURA f INNER JOIN TIPO_FACTURA tf ON tf.Id WHERE ";
-
+				//string sql = "SELECT * FROM FACTURA f INNER JOIN TIPO_FACTURA tf ON tf.Id WHERE ";
 
 
 
@@ -140,11 +141,14 @@ namespace FacturaElectronica
         protected override void OnStart(string[] args)
         {
 			ArchivoLog = ConfigurationManager.AppSettings["CrearLog"].CompareTo("1") == 0;
+
 			CadenaSQLServer = DesencriptarCadena(ConfigurationManager.AppSettings["cnSictert"]);
 			SqlServer.CadenaConexion = CadenaSQLServer;
 
 			fun.Log("Inicializando servicio de facturación electrónica...");
-			fun.Log("Conectado a " + SqlServer.EXEC_SCALAR("SELECT Valor FROM CONFIGURACION_GLOBAL WHERE Configuracion = 'ubicacion'").ToString());
+			//fun.Log("Conectado a " + SqlServer.EXEC_SCALAR("SELECT Valor FROM CONFIGURACION_GLOBAL WHERE Configuracion = 'ubicacion'").ToString());
+			List<DocumentoElectronico> documentos = new List<DocumentoElectronico>();
+			documentos = Consultas.GetListFacturas();
 
 			int RefrescarCada = 2000;
 			try
