@@ -237,5 +237,100 @@ namespace FacturaElectronica.Procesos
         }
 
         //Enviar el Documento al SRI para que sa recibido o devuelto
+        public static Resultado ValidarSRI(DocumentoElectronico doc, Directorio directorio)
+        {
+            byte[] sxml = null;
+            Resultado r = new Resultado();
+            Resultado df = directorio.Path(EstadoDocumento.Firmado);
+            Resultado dr = directorio.Path(EstadoDocumento.Recibido);
+            Resultado dd = directorio.Path(EstadoDocumento.Devuelto);
+            if (df.Estado && dr.Estado & dd.Estado)
+            {
+                string dxml = System.IO.File.ReadAllText(df.Mensaje + doc.Nombre + ".xml");
+                try
+                {
+                    sxml = System.IO.File.ReadAllBytes(df.Mensaje + doc.Nombre + ".xml");
+                }
+                catch (Exception ex)
+                {
+                    r.Estado = false;
+                    r.Mensaje = ex.Message;
+                }
+                int intento = 1;
+                if (sxml[0].ToString() != "60")
+                    sxml = sxml.Skip(3).ToArray();
+                Found:
+                try
+                {
+                    using (RecepcionComprobantesService1 rc = new RecepcionComprobantesService1())
+                    {
+                        rc.Url = Program.getServiciosSRI.FirstOrDefault(x => doc.Ambiente == x.Ambiente).Recepción;
+                        wsRecepcionSRI.respuestaSolicitud rs = new wsRecepcionSRI.respuestaSolicitud();
+                        //respuestaSolicitud  
+                        rs = rc.validarComprobante(sxml);
+                        doc.SoapRecepción = rc.XmlResponse;
+                        var resp = doc.Recepción;
+                        String nError = "", mError = "";
+
+
+                        if (resp.estado.ToUpper() == "RECIBIDA")
+                        {
+                            doc.Estado = EstadoDocumento.Recibido;
+                            r.Estado = true;
+                            System.IO.File.Move(df.Mensaje + doc.Nombre + ".xml", dr.Mensaje + doc.Nombre + ".xml");
+                        }
+                        else
+                        {
+                            doc.Estado = EstadoDocumento.Devuelto;
+                            r.Estado = false;
+                            System.IO.File.Delete(df.Mensaje + doc.Nombre + ".xml");
+                            if (doc.Mensaje == null)
+                                doc.Mensaje = "";
+                            doc.Mensaje = r.Mensaje;
+
+                            System.IO.File.WriteAllText(dd.Mensaje + doc.Nombre + ".xml", doc.xml + doc.Mensaje);
+                            System.IO.File.Delete(df.Mensaje + doc.Nombre + ".xml");
+                            //System.IO.File.Move(df.Mensaje + doc.Nombre + ".xml", dd.Mensaje + doc.Nombre + ".xml");
+                        }
+                        ActualizarInfoDocu(doc, nError, mError, dxml);
+                    }
+                }
+                catch (WebException ew)
+                {
+                    r.Estado = false;
+                    r.Mensaje += (ew.Message + "\n");
+                    if (intento < 3)
+                    {
+                        intento++;
+                        Thread.Sleep(2000);
+                        goto Found;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    r.Estado = false;
+                    r.Mensaje += (ex.Message + "\n");
+                    if (intento < 3)
+                    {
+                        intento++;
+                        Thread.Sleep(6000);
+                        goto Found;
+                    }
+                }
+            }
+            else
+            {
+                r.Mensaje = "Error: ";
+                r.Estado = false;
+
+                if (!df.Estado)
+                    r.Mensaje += "\nNo se ha encontrado el directorio de los documentos Firmados.";
+                if (!dr.Estado)
+                    r.Mensaje += "\nNo se ha encontrado el directorio de los documentos recibidos.";
+                if (!dd.Estado)
+                    r.Mensaje += "\nNo se ha encontrado el directorio de los documentos no recibidos.";
+            }
+            return r;
+        }
     }
 }

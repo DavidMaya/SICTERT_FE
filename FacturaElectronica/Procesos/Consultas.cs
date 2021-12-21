@@ -170,5 +170,17 @@ namespace FacturaElectronica.Clases
             else
                 throw new Exception("Ha ocurrido un error al crear la carpeta de No Firmados");
         }
+
+        public static Resultado UpdateEstadoFactura(long id, string table, string estado)
+        {
+            Resultado resultado = new Resultado();
+
+            string sql = Queries.UpdateEstadoFactura(id, table, estado);
+            string res = SqlServer.EXEC_COMMAND(sql);
+            resultado.Estado = res == "OK";
+            resultado.Mensaje = SqlServer.MensajeDeActualizar;
+
+            return resultado;
+        }
     }
 }

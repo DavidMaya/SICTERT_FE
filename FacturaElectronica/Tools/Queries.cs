@@ -70,5 +70,10 @@ namespace FacturaElectronica.Clases
                 $"FROM {table} dfr " +
                 $"WHERE dfr.{id} = {idFactura}";
         }
+
+        internal static string UpdateEstadoFactura(long id, string table, string state)
+        {
+            return $"UPDATE {table} SET Id_EstadoFE = '{state}' WHERE Id_Factura = {id}";
+        }
     }
 }

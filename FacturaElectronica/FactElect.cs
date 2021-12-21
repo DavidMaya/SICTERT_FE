@@ -131,13 +131,13 @@ namespace FacturaElectronica
 			fun.Log($"Se han creado {documentos.Count()} documentos no firmados de la tabla {table}");
 
 			//Proceso de firmar
-			Actividad(EstadoDocumento.SinFirma);
+			Actividad(EstadoDocumento.SinFirma, table);
 
 			//Proceso de enviar al SRI
-			Actividad(EstadoDocumento.Firmado);
+			Actividad(EstadoDocumento.Firmado, table);
         }
 
-		private void Actividad(EstadoDocumento Estado)
+		private void Actividad(EstadoDocumento Estado, string table)
         {
 			Resultado resultado;
 
@@ -145,16 +145,21 @@ namespace FacturaElectronica
             {
 				if (documento.Estado == EstadoDocumento.SinFirma)
 				{
+					// Traer los datos para firmar y la ubicación
 					resultado = directorio.Path(ConfigurationManager.AppSettings["pathP12"]);
 					string certificado = resultado.Mensaje + documento.certificado;
 					string clave = DesencriptarCadena(documento.clave);
+
 					resultado = Actions.Firmar(documento, certificado, clave, directorio);
+					if (!resultado.Estado) throw new Exception(resultado.Mensaje);
+
+					resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "PPR");
 					if (!resultado.Estado) throw new Exception(resultado.Mensaje);
 					fun.Log($"Se ha firmado correctamente la factura: {documento.Nombre}");
 				}
 				else if (documento.Estado == EstadoDocumento.Firmado)
                 {
-					resultado = Actions.ValidarSRI(documento);
+					resultado = Actions.ValidarSRI(documento, directorio);
                 }
 			}
 		}
