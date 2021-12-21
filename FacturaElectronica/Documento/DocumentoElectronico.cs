@@ -10,7 +10,8 @@ namespace FacturaElectronica.Documento
     [Serializable]
     public class DocumentoElectronico
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
+        public string Table { get; set; }
         public TipoDocumento Tipo { get; set; }
         public EstadoDocumento Estado { get; set; }
         public Boolean EnviadoMail { get; set; }
@@ -22,7 +23,8 @@ namespace FacturaElectronica.Documento
         {
             get
             {
-                return Tipo.ToString() + Id.ToString().PadLeft(5, '0');
+                //return Tipo.ToString() + Id.ToString().PadLeft(5, '0');
+                return $"{Table}_{Id.ToString().PadLeft(15, '0')}";
             }
         }
         [XmlIgnore]
@@ -239,6 +241,9 @@ namespace FacturaElectronica.Documento
         //        return r;
         //    }
         //}
+
+        public string certificado { get; set; }
+        public string clave { get; set; }
 
     }
 }

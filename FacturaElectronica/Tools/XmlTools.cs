@@ -36,9 +36,10 @@ namespace FacturaElectronica.Tools
             {
                 var xmlSerialize = new XmlSerializer(typeof(T));
                 XmlSerializerNamespaces namespaces = new XmlSerializerNamespaces();
+                XmlWriterSettings settings = new XmlWriterSettings { Indent = true };
                 namespaces.Add("", "");
                 var stringWriter = new Utf8StringWriter();
-                using (var writer = XmlWriter.Create(stringWriter))
+                using (var writer = XmlWriter.Create(stringWriter, settings))
                 {
                     xmlSerialize.Serialize(writer, value, namespaces);
                     return stringWriter.ToString();

@@ -11,12 +11,12 @@ namespace Test
     {
         static void Main(string[] args)
         {
-            string fechaEmision = "10/12/2021";
+            string fechaEmision = "14/12/2021";
             string tipoComprobante = "01";
             string ruc = "1891760171001";
             string tipoAmbiente = "2"; //Producción
             string serie = "001001";
-            string numeroComprobante = "000000100";
+            string numeroComprobante = "000000101";
             string tipoEmision = "1";
 
             string res = GetClaveAcceso(fechaEmision, tipoComprobante, ruc, tipoAmbiente, serie, numeroComprobante, tipoEmision);
@@ -48,8 +48,14 @@ namespace Test
                 count++;
             }
 
-            int verificacion = 11 - (total % 11);
-            return clave + verificacion.ToString();
+            int mod = total % 11;
+            if (mod == 0) 
+                return clave + mod.ToString();
+            else
+            {
+                int verificacion = 11 - mod;
+                return clave + verificacion.ToString();
+            }
         }
 
         private void TestXML()

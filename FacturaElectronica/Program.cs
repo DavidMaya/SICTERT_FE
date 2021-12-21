@@ -18,8 +18,7 @@ namespace FacturaElectronica
 #if DEBUG
             FactElect service = new FactElect();
             service.OnDebug();
-            //System.Threading.Thread.Sleep(
-            //    System.Threading.Timeout.Infinite);
+            System.Threading.Thread.Sleep(System.Threading.Timeout.Infinite);
 #else
             ServiceBase[] ServicesToRun;
             ServicesToRun = new ServiceBase[]

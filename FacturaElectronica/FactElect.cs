@@ -17,12 +17,15 @@ using System.Runtime.InteropServices;
 using System.Timers;
 using FacturaElectronica.Clases;
 using FacturaElectronica.Documento;
+using FacturaElectronica.Tools;
+using System.Threading;
+using FacturaElectronica.Procesos;
 
 namespace FacturaElectronica
 {
     public partial class FactElect : ServiceBase
     {
-		Timer runTim;
+        System.Timers.Timer runTim;
 		public static string SignoDecimal;
 		public static string SignoDecimalSQLServer;
 		private static readonly byte[] baClavePredet = ASCIIEncoding.ASCII.GetBytes("sicTERT+");
@@ -31,13 +34,16 @@ namespace FacturaElectronica
 		public static string DirectorioTrabajo = AppDomain.CurrentDomain.BaseDirectory;
 		public static string path = AppDomain.CurrentDomain.BaseDirectory + "\\log-factelect.txt";
 		public static funciones fun = new funciones(DirectorioTrabajo, path, ArchivoLog);
+		private static Directorio directorio = new Directorio(DirectorioTrabajo, ConfigurationManager.AppSettings["pathDocs"]);
+
+		List<DocumentoElectronico> documentos = null;
 
 		public void OnDebug()
         {
-			OnStart(null);
+            OnStart(null);
         }
 
-		public static string CrearLlaveMD5(string stValor)
+        public static string CrearLlaveMD5(string stValor)
 		{
 			MD5CryptoServiceProvider md5 = new MD5CryptoServiceProvider();
 			byte[] bValor = md5.ComputeHash(Encoding.ASCII.GetBytes(stValor));
@@ -101,13 +107,7 @@ namespace FacturaElectronica
 			runTim.Stop();
 			try
 			{
-				// buscar si hay facturas electrónicas por procesar
-
-				// facturas del módulo Frecuencias
-				//string sql = "SELECT * FROM FACTURA f INNER JOIN TIPO_FACTURA tf ON tf.Id WHERE ";
-
-
-
+				ProcesarDocumentos("Id_Factura", "FACTURA", "FACTURA_CONCEPTO");
 
 			}
 			catch (Exception ex)
@@ -123,7 +123,54 @@ namespace FacturaElectronica
 			}
 		}
 
-		[DllImport("kernel32.dll", EntryPoint = "SetProcessWorkingSetSize", ExactSpelling = true, CharSet = CharSet.Ansi, SetLastError = true)]
+        private void ProcesarDocumentos(string id, string table, string tableDetalles)
+        {
+			//Cargar documentos
+			documentos = new List<DocumentoElectronico>();
+            documentos = Consultas.GetListFacturas(id, table, tableDetalles, directorio);
+			fun.Log($"Se han creado {documentos.Count()} documentos no firmados de la tabla {table}");
+
+			//Proceso de firmar
+			Actividad(EstadoDocumento.SinFirma);
+
+			//Proceso de enviar al SRI
+			Actividad(EstadoDocumento.Firmado);
+        }
+
+		private void Actividad(EstadoDocumento Estado)
+        {
+			Resultado resultado;
+
+			foreach (DocumentoElectronico documento in documentos.Where(xx => xx.Estado == Estado))
+            {
+				if (documento.Estado == EstadoDocumento.SinFirma)
+				{
+					resultado = directorio.Path(ConfigurationManager.AppSettings["pathP12"]);
+					string certificado = resultado.Mensaje + documento.certificado;
+					string clave = DesencriptarCadena(documento.clave);
+					resultado = Actions.Firmar(documento, certificado, clave, directorio);
+					if (!resultado.Estado) throw new Exception(resultado.Mensaje);
+					fun.Log($"Se ha firmado correctamente la factura: {documento.Nombre}");
+				}
+				else if (documento.Estado == EstadoDocumento.Firmado)
+                {
+					resultado = Actions.ValidarSRI(documento);
+                }
+			}
+		}
+
+		private void CrearDirectorios()
+        {
+			directorio.Path(EstadoDocumento.SinFirma);
+			directorio.Path(EstadoDocumento.Firmado);
+			directorio.Path(EstadoDocumento.Recibido);
+			directorio.Path(EstadoDocumento.Rechazado);
+			directorio.Path(EstadoDocumento.Devuelto);
+			directorio.Path(EstadoDocumento.Autorizado);
+			directorio.Path(ConfigurationManager.AppSettings["pathP12"]);
+		}
+
+        [DllImport("kernel32.dll", EntryPoint = "SetProcessWorkingSetSize", ExactSpelling = true, CharSet = CharSet.Ansi, SetLastError = true)]
 		private static extern int SetProcessWorkingSetSize(IntPtr process, int minimumWorkingSetSize, int maximumWorkingSetSize);
 
 		public static void liberarMemoria()
@@ -147,30 +194,34 @@ namespace FacturaElectronica
 
 			fun.Log("Inicializando servicio de facturación electrónica...");
 			//fun.Log("Conectado a " + SqlServer.EXEC_SCALAR("SELECT Valor FROM CONFIGURACION_GLOBAL WHERE Configuracion = 'ubicacion'").ToString());
-			List<DocumentoElectronico> documentos = new List<DocumentoElectronico>();
-			documentos = Consultas.GetListFacturas();
+			CrearDirectorios();
 
 			int RefrescarCada = 2000;
-			try
-			{
-				RefrescarCada = int.Parse(ConfigurationManager.AppSettings["RefrescarCada"]);
-			}
-			catch (Exception)
-			{
-				RefrescarCada = 2000;
-			}
-			SignoDecimal = System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator.ToString().Trim();
-			SignoDecimalSQLServer = ConfigurationManager.AppSettings["SignoDecimalSQLServer"];
+            try
+            {
+                RefrescarCada = int.Parse(ConfigurationManager.AppSettings["RefrescarCada"]);
+            }
+            catch (Exception)
+            {
+                RefrescarCada = 2000;
+            }
+            SignoDecimal = System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator.ToString().Trim();
+            SignoDecimalSQLServer = ConfigurationManager.AppSettings["SignoDecimalSQLServer"];
 
-			runTim = new Timer();
-			runTim.Interval = RefrescarCada * 1000;
-			runTim.Elapsed += new ElapsedEventHandler(run_Tick);
-			runTim.Start();
-		}
+            runTim = new System.Timers.Timer();
+            runTim.Interval = RefrescarCada * 1000;
+            runTim.Elapsed += new ElapsedEventHandler(run_Tick);
+            runTim.Start();
+        }
 
 		protected override void OnStop()
         {
 			fun.Log("Deteniendo servicio de respaldo y mantenimiento...");
 		}
-	}
+
+        protected override void OnPause()
+        {
+            base.OnPause();
+        }
+    }
 }

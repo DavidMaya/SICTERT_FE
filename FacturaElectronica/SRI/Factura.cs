@@ -35,11 +35,14 @@ namespace FacturaElectronica.SRI
 
         public factura()
         {
+            version = "1.1.0";
+            id = "comprobante";
             infoTributaria = new facturaInfoTributaria();
             infoFactura = new facturaInfoFactura();
+            infoFactura.totalConImpuestos = new List<facturaInfoFacturaTotalImpuesto>();
+            pagos = new List<facturaPago>();
             detalles = new List<facturaDetalle>();
             infoAdicional = new List<facturaCampoAdicional>();
-            pagos = new List<facturaPago>();
         }
     }
 
