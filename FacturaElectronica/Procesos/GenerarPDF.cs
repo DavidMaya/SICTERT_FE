@@ -890,6 +890,15 @@ namespace FacturaElectronica.Procesos
                     return resultado;
                 }
 
+            } 
+            else
+            {
+                resultado.Estado = false;
+                if (!pathFirmado.Estado)
+                    resultado.Mensaje = "No se ha conseguido cargar el directorio Inicial:\n" + pathFirmado.Mensaje;
+                if (!pathPDF.Estado)
+                    resultado.Mensaje = "No se ha conseguido cargar el directorio Inicial:\n" + pathPDF.Mensaje;
+                return resultado;
             }
         }
     }
