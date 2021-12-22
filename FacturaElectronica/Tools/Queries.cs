@@ -27,8 +27,8 @@ namespace FacturaElectronica.Clases
                 "IIF(f.ObligadoContab_Emisor = 1, 'SI', 'NO') AS obligadoContabilidad, " +
                 "f.Razon_Social AS razonSocialComprador, " +
                 "f.CI_Ruc AS identificacionComprador, " +
-                "CONVERT(DECIMAL(10, 4), (f.Valor + f.ValorBaseIVA)) AS totalSinImpuestos, " +
-                "CONVERT(DECIMAL(10,4), f.Valor_Total) AS importeTotal, " +
+                "CONVERT(DECIMAL(10, 2), (f.Valor + f.ValorBaseIVA)) AS totalSinImpuestos, " +
+                "CONVERT(DECIMAL(10,2), f.Valor_Total) AS importeTotal, " +
                 // infoAdicional
                 "cf.Direccion, cf.Telefono, cf.Email, " +
                 "c.CertificadoP12 as certificado, c.ClaveCertificadoP12 as clave " +
@@ -37,7 +37,7 @@ namespace FacturaElectronica.Clases
                 "INNER JOIN CLIENTE_FINAL cf ON cf.Id_Cliente_Final = f.Codigo_TipoIdCliente " +
                 "INNER JOIN CAJA C ON f.Id_Caja = C.Id_Caja " +
                 // where
-                $"WHERE f.{id} = 1254161";
+                $"WHERE f.{id} = 1214303";
         }
 
         public static string SelectImpuestosGeneric(string id, string table, long idFactura)
@@ -46,7 +46,7 @@ namespace FacturaElectronica.Clases
                 "CASE WHEN dfr.Iva = 0 THEN 0 WHEN dfr.Iva = 12 THEN 2 END AS codigo, " +
                 "CASE WHEN dfr.Iva = 0 THEN 0 WHEN dfr.Iva = 12 THEN 2 " +
                 "WHEN dfr.Iva = 14 THEN 3 END AS codigoPorcentaje, " +
-                "CONVERT(DECIMAL(10, 4), SUM(dfr.Valor * dfr.Cantidad)) AS baseImponible " +
+                "CONVERT(DECIMAL(10, 2), SUM(dfr.Valor * dfr.Cantidad)) AS baseImponible " +
                 $"FROM {table} dfr " +
                 $"WHERE dfr.{id} = {idFactura} " +
                 "GROUP BY dfr.Iva";
@@ -55,13 +55,13 @@ namespace FacturaElectronica.Clases
         public static string SelectDetalleGeneric(string id, string table, long idFactura)
         {
             string field = table != "FACTURA_CONCEPTO" ? 
-                ", dfr.Iva_Valor AS valor " : ", CONVERT(DECIMAL(10, 4), dfr.Valor * dfr.Cantidad) AS valor "; //Aquí puede haber un cambio en el Iva
+                ", dfr.Iva_Valor AS valor " : ", CONVERT(DECIMAL(10, 2), dfr.Valor * dfr.Cantidad) AS valor "; //Aquí puede haber un cambio en el Iva
             return "SELECT " +
                 "dfr.Id_Concepto_Cuenta AS codigoPrincipal, " +
                 "dfr.Nombre AS descripcion, " +
                 "dfr.Cantidad AS cantidad, " +
-                "CONVERT(DECIMAL(10, 4), dfr.Valor) AS precioUnitario, " +
-                "CONVERT(DECIMAL(10, 4), dfr.Valor * dfr.Cantidad) AS precioTotalSinImpuesto, " +
+                "CONVERT(DECIMAL(10, 2), dfr.Valor) AS precioUnitario, " +
+                "CONVERT(DECIMAL(10, 2), dfr.Valor * dfr.Cantidad) AS precioTotalSinImpuesto, " +
                 "CASE WHEN dfr.Iva = 0 THEN 0 WHEN dfr.Iva = 12 THEN 2 END AS codigo, " +
                 "CASE WHEN dfr.Iva = 0 THEN 0 WHEN dfr.Iva = 12 THEN 2 " +
                 "WHEN dfr.Iva = 14 THEN 3 END AS codigoPorcentaje, " +
@@ -73,7 +73,8 @@ namespace FacturaElectronica.Clases
 
         internal static string UpdateEstadoFactura(long id, string table, string state)
         {
-            return $"UPDATE {table} SET Id_EstadoFE = '{state}' WHERE Id_Factura = {id}";
+            //return $"UPDATE {table} SET Id_EstadoFE = '{state}' WHERE Id_Factura = {id}";
+            return $"UPDATE {table} SET Id_EstadoFE = (SELECT Id_EstadoFE FROM ESTADO_FACTELECTRONICA WHERE Codigo = '{state}') WHERE Id_Factura = {id}";
         }
     }
 }

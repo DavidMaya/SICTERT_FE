@@ -123,7 +123,7 @@ namespace FacturaElectronica
 			// Cargar documentos
 			documentos = new List<DocumentoElectronico>();
             documentos = Consultas.GetListFacturas(id, table, tableDetalles, directorio);
-			fun.Log($"Se han creado {documentos.Count()} documentos no firmados de la tabla {table}");
+			fun.Log($"Se han creado {documentos.Count()} documentos de la tabla {table} para ser firmados");
 
 			// Proceso de firmar
 			Actividad(EstadoDocumento.SinFirma, table);
@@ -144,7 +144,7 @@ namespace FacturaElectronica
 
 			foreach (DocumentoElectronico documento in documentos.Where(xx => xx.Estado == Estado))
             {
-				GenerarPDF.Factura(documento, directorio, table);
+				//GenerarPDF.Factura(documento, directorio, table);
                 string mensaje = "";
                 if (documento.Estado == EstadoDocumento.SinFirma)
                 {
@@ -166,21 +166,21 @@ namespace FacturaElectronica
                     resultado = Actions.ConsultarSRI(documento, directorio, table);
                     mensaje = "recepción";
                 }
-				else if (documento.Estado == EstadoDocumento.Autorizado)
-				{
-					resultado =  GenerarPDF.Factura(documento, directorio, table);
-					mensaje = "generar pdf";
-				}
-				else
+                else if (documento.Estado == EstadoDocumento.Autorizado)
+                {
+                    resultado = GenerarPDF.Factura(documento, directorio, table);
+                    mensaje = "generar pdf";
+                }
+                else
                 {
                     resultado.Estado = false;
                     resultado.Mensaje = "Ha ocurrido un error desconocido...";
                 }
 
                 if (!resultado.Estado)
-                    fun.Log($"Error en {mensaje} de documento: {documento.Nombre} => {resultado.Estado}");
+                    fun.Log($"Error en {mensaje} de documento: {documento.Nombre} => {resultado.Mensaje}");
                 else
-                    fun.Log($"{documento} correcta de documento: {documento.Nombre}");
+                    fun.Log($"Proceso {mensaje} correcta de documento: {documento.Nombre}");
             }
 		}
 

@@ -55,7 +55,7 @@ namespace FacturaElectronica.Clases
                             ruc = "1891760171001",
                             estab = "001",
                             ptoEmi = "001",
-                            secuencial = "000000109",
+                            secuencial = "000000110",
                             dirMatriz = "Portoviejo 02-44 y Tulcán"
                         };
 
@@ -99,7 +99,8 @@ namespace FacturaElectronica.Clases
                         }
 
                         // Revisar si puede enlazarse pagos en el sistema
-                        fact.pagos.Add(new facturaPago()
+                        fact.infoFactura.pagos = new List<facturaPago>();
+                        fact.infoFactura.pagos.Add(new facturaPago()
                         {
                             formaPago = "01",
                             importeTotal = float.Parse(inf["importeTotal"].ToString())
@@ -157,10 +158,9 @@ namespace FacturaElectronica.Clases
                             fact.infoTributaria.secuencial,
                             fact.infoTributaria.tipoEmision.ToString());
 
-                        //documento.xml = XmlTools.Serialize(fact);
+                        documento.xml = XmlTools.Serialize(fact);
                         // Crear xml sin firma en la carpeta seleccionada
-                        System.IO.File.WriteAllText(pathDestino.Mensaje + documento.Nombre + ".xml", XmlTools.Serialize(fact));
-                        documentos.Add(documento);
+                        System.IO.File.WriteAllText(pathDestino.Mensaje + documento.Nombre + ".xml", XmlTools.Serialize(fact)); documentos.Add(documento);
                     }
                 }
 
@@ -178,7 +178,7 @@ namespace FacturaElectronica.Clases
             string sql = Queries.UpdateEstadoFactura(id, table, estado);
             string res = SqlServer.EXEC_COMMAND(sql);
             resultado.Estado = res == "OK";
-            resultado.Mensaje = SqlServer.MensajeDeActualizar;
+            resultado.Mensaje = res == "OK" ? SqlServer.MensajeDeActualizar : res;
 
             return resultado;
         }

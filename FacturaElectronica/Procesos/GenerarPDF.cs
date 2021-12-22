@@ -392,7 +392,7 @@ namespace FacturaElectronica.Procesos
                         AMBIENTE.BorderWidth = 0f;
                         tablef.AddCell(AMBIENTE);
 
-                        PdfPCell AMBIENTE1 = new PdfPCell(new Paragraph("Producción", FontFactory.GetFont("Arial", 8)));
+                        PdfPCell AMBIENTE1 = new PdfPCell(new Paragraph(ambiente == "1" ? "Pruebas" : "Producción", FontFactory.GetFont("Arial", 8)));
                         AMBIENTE1.BorderWidth = 0f;
                         tablef.AddCell(AMBIENTE1);
 

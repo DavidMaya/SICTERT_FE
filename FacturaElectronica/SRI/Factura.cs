@@ -17,9 +17,6 @@ namespace FacturaElectronica.SRI
     {
         public facturaInfoTributaria infoTributaria { get; set; }
         public facturaInfoFactura infoFactura { get; set; }
-        
-        [XmlArrayItemAttribute("pago", IsNullable = false)]
-        public List<facturaPago> pagos { get; set; }
 
         [XmlArrayItemAttribute("detalle", IsNullable = false)]
         public List<facturaDetalle> detalles { get; set; }
@@ -35,12 +32,11 @@ namespace FacturaElectronica.SRI
 
         public factura()
         {
-            version = "1.1.0";
+            version = "1.0.0";
             id = "comprobante";
             infoTributaria = new facturaInfoTributaria();
             infoFactura = new facturaInfoFactura();
             infoFactura.totalConImpuestos = new List<facturaInfoFacturaTotalImpuesto>();
-            pagos = new List<facturaPago>();
             detalles = new List<facturaDetalle>();
             infoAdicional = new List<facturaCampoAdicional>();
         }
@@ -89,6 +85,8 @@ namespace FacturaElectronica.SRI
         public float propina { get; set; }
         public float importeTotal { get; set; }
         public string moneda { get; set; }
+        [XmlArrayItemAttribute("pago", IsNullable = false)]
+        public List<facturaPago> pagos { get; set; }
         [XmlIgnore]
         public Double TarifaIVA
         {

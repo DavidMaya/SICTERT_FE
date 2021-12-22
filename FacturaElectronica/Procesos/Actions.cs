@@ -20,6 +20,7 @@ using FacturaElectronica.Documento;
 using FacturaElectronica.Tools;
 using FacturaElectronica.SRI;
 using FacturaElectronica.Clases;
+using System.Xml;
 
 namespace FacturaElectronica.Procesos
 {
@@ -155,7 +156,7 @@ namespace FacturaElectronica.Procesos
                         datosAFirmar.setParentSignNode("comprobante");
 
                         //System.IO.File.WriteAllText(pathOrigen.Mensaje + Documento.Nombre + ".xml", Documento.xml);
-                        Document docToSign = LoadXML(pathSinFirma.Mensaje + documento.Nombre + ".xml");
+                        //Document docToSign = LoadXML(pathSinFirma.Mensaje + documento.Nombre + ".xml");
 
                         Document doc = LoadXML(pathSinFirma.Mensaje + documento.Nombre + ".xml");
                         datosAFirmar.setDocument(doc);
@@ -217,10 +218,11 @@ namespace FacturaElectronica.Procesos
         {
             byte[] signedXml = null;
             Resultado resultado = new Resultado();
+            Resultado pathSinFirma = directorio.Path(EstadoDocumento.SinFirma);
             Resultado pathFirmados = directorio.Path(EstadoDocumento.Firmado);
             Resultado pathRecibidos = directorio.Path(EstadoDocumento.Recibido);
-            Resultado pathDevuelto = directorio.Path(EstadoDocumento.Devuelto);
-            if (pathFirmados.Estado && pathRecibidos.Estado & pathDevuelto.Estado)
+            Resultado pathDevueltos = directorio.Path(EstadoDocumento.Devuelto);
+            if (pathFirmados.Estado && pathRecibidos.Estado & pathDevueltos.Estado)
             {
                 //string dxml = System.IO.File.ReadAllText(pathFirmados.Mensaje + documento.Nombre + ".xml");
                 //try
@@ -243,7 +245,6 @@ namespace FacturaElectronica.Procesos
                     {
                         // Cambiar url dependiendo el ambiente
 
-                        //rc.Url = Program.getServiciosSRI.FirstOrDefault(x => doc.Ambiente == x.Ambiente).Recepción;
                         recepComService.Url = Properties.Settings.Default.SiCtert_FacturaElectrónica_wsRecepcionSRI_RecepcionComprobantesOfflineService;
                         wsRecepcionSRI.respuestaSolicitud response = new wsRecepcionSRI.respuestaSolicitud();
                         //respuestaSolicitud  
@@ -253,23 +254,30 @@ namespace FacturaElectronica.Procesos
 
                         if (resp.estado.ToUpper() == "RECIBIDA")
                         {
+                            resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "ENV");
                             documento.Estado = EstadoDocumento.Recibido;
                             resultado.Estado = true;
+                            // Hay que hacer un cambio aquí:
+
                             System.IO.File.Move(pathFirmados.Mensaje + documento.Nombre + ".xml", pathRecibidos.Mensaje + documento.Nombre + ".xml");
-                            resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "ENV");
                         }
                         else
                         {
+                            resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "NEV");
                             documento.Estado = EstadoDocumento.Devuelto;
                             resultado.Estado = false;
-                            System.IO.File.Delete(pathFirmados.Mensaje + documento.Nombre + ".xml");
                             if (documento.Mensaje == null)
                                 documento.Mensaje = "";
                             documento.Mensaje = resultado.Mensaje;
 
-                            System.IO.File.WriteAllText(pathDevuelto.Mensaje + documento.Nombre + ".xml", documento.xml + documento.Mensaje);
+                            System.IO.File.Delete(pathDevueltos.Mensaje + documento.Nombre + ".xml");
+                            System.IO.File.Move(pathFirmados.Mensaje + documento.Nombre + ".xml",
+                                pathDevueltos.Mensaje + documento.Nombre + ".xml");
+                            resultado.Mensaje = resp.comprobantes.comprobante.mensajes.mensaje.mensaje;
+
+
+                            //System.IO.File.WriteAllText(pathDevuelto.Mensaje + documento.Nombre + ".xml", documento.xml + documento.Mensaje);
                             //System.IO.File.Delete(pathFirmados.Mensaje + documento.Nombre + ".xml");
-                            resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "NEV");
                         }
                         
                     }
@@ -306,7 +314,7 @@ namespace FacturaElectronica.Procesos
                     resultado.Mensaje += "\nNo se ha encontrado el directorio de los documentos Firmados.";
                 if (!pathRecibidos.Estado)
                     resultado.Mensaje += "\nNo se ha encontrado el directorio de los documentos recibidos.";
-                if (!pathDevuelto.Estado)
+                if (!pathDevueltos.Estado)
                     resultado.Mensaje += "\nNo se ha encontrado el directorio de los documentos no recibidos.";
             }
             return resultado;
