@@ -80,6 +80,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>bin\Debug\IKVM.Runtime.dll</HintPath>
     </Reference>
+    <Reference Include="itextsharp, Version=5.5.13.0, Culture=neutral, PublicKeyToken=8354ae6d2174ddca, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>bin\Debug\itextsharp.dll</HintPath>
+    </Reference>
     <Reference Include="MITyCLibAPI-1.0.4, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>bin\Debug\MITyCLibAPI-1.0.4.dll</HintPath>
@@ -112,6 +116,8 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
+    <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Web.Services" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -127,6 +133,16 @@
   <ItemGroup>
     <Compile Include="Procesos\Consultas.cs" />
     <Compile Include="Clases\funciones.cs" />
+    <Compile Include="Procesos\GenerarPDF.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="SRI\AutorizacionComprobantesService.cs" />
+    <Compile Include="SRI\RecepcionComprobantesService.cs" />
+    <Compile Include="SRI\XmlReaderSpy.cs" />
+    <Compile Include="SRI\XmlWriterSpy.cs" />
     <Compile Include="Tools\Queries.cs" />
     <Compile Include="Clases\SqlServer.cs" />
     <Compile Include="Documento\DocumentoElectronico.cs" />
@@ -154,9 +170,42 @@
     <Compile Include="Tools\Directorio.cs" />
     <Compile Include="Tools\Resultado.cs" />
     <Compile Include="Tools\XmlTools.cs" />
+    <Compile Include="Web References\wsAutorizacionSRI\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.map</DependentUpon>
+    </Compile>
+    <Compile Include="Web References\wsRecepcionSRI\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.map</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="Web References\wsAutorizacionSRI\AutorizacionComprobantesOfflineService.wsdl" />
+    <None Include="Web References\wsAutorizacionSRI\Reference.map">
+      <Generator>MSDiscoCodeGenerator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+    <None Include="Web References\wsAutorizacionSRI\respuestaComprobante.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
+    <None Include="Web References\wsAutorizacionSRI\respuestaLote.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
+    <None Include="Web References\wsRecepcionSRI\RecepcionComprobantesOfflineService.wsdl" />
+    <None Include="Web References\wsRecepcionSRI\Reference.map">
+      <Generator>MSDiscoCodeGenerator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+    <None Include="Web References\wsRecepcionSRI\respuestaSolicitud.datasource">
+      <DependentUpon>Reference.map</DependentUpon>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="favicon.ico" />
@@ -168,6 +217,33 @@
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WebReferences Include="Web References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WebReferenceUrl Include="https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline%3fwsdl">
+      <UrlBehavior>Dynamic</UrlBehavior>
+      <RelPath>Web References\wsAutorizacionSRI\</RelPath>
+      <UpdateFromURL>https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline%3fwsdl</UpdateFromURL>
+      <ServiceLocationURL>
+      </ServiceLocationURL>
+      <CachedDynamicPropName>
+      </CachedDynamicPropName>
+      <CachedAppSettingsObjectName>Settings</CachedAppSettingsObjectName>
+      <CachedSettingsPropName>SiCtert_FacturaElectrónica_wsAutorizacionSRI_AutorizacionComprobantesOfflineService</CachedSettingsPropName>
+    </WebReferenceUrl>
+    <WebReferenceUrl Include="https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline%3fwsdl">
+      <UrlBehavior>Dynamic</UrlBehavior>
+      <RelPath>Web References\wsRecepcionSRI\</RelPath>
+      <UpdateFromURL>https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline%3fwsdl</UpdateFromURL>
+      <ServiceLocationURL>
+      </ServiceLocationURL>
+      <CachedDynamicPropName>
+      </CachedDynamicPropName>
+      <CachedAppSettingsObjectName>Settings</CachedAppSettingsObjectName>
+      <CachedSettingsPropName>SiCtert_FacturaElectrónica_wsRecepcionSRI_RecepcionComprobantesOfflineService</CachedSettingsPropName>
+    </WebReferenceUrl>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

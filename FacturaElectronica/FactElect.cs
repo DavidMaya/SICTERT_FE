@@ -2,23 +2,18 @@
 using HRDA;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Diagnostics;
 using System.Configuration;
-using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.ServiceProcess;
 using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.Timers;
 using FacturaElectronica.Clases;
 using FacturaElectronica.Documento;
 using FacturaElectronica.Tools;
-using System.Threading;
 using FacturaElectronica.Procesos;
 
 namespace FacturaElectronica
@@ -125,43 +120,68 @@ namespace FacturaElectronica
 
         private void ProcesarDocumentos(string id, string table, string tableDetalles)
         {
-			//Cargar documentos
+			// Cargar documentos
 			documentos = new List<DocumentoElectronico>();
             documentos = Consultas.GetListFacturas(id, table, tableDetalles, directorio);
 			fun.Log($"Se han creado {documentos.Count()} documentos no firmados de la tabla {table}");
 
-			//Proceso de firmar
+			// Proceso de firmar
 			Actividad(EstadoDocumento.SinFirma, table);
 
-			//Proceso de enviar al SRI
-			Actividad(EstadoDocumento.Firmado, table);
+            // Proceso de enviar al SRI
+            Actividad(EstadoDocumento.Firmado, table);
+
+            // Proceso de consultar al SRI
+            Actividad(EstadoDocumento.Recibido, table);
+
+            // Creación de pdf
+            Actividad(EstadoDocumento.Autorizado, table);
         }
 
 		private void Actividad(EstadoDocumento Estado, string table)
         {
-			Resultado resultado;
+			Resultado resultado = new Resultado();
 
 			foreach (DocumentoElectronico documento in documentos.Where(xx => xx.Estado == Estado))
             {
-				if (documento.Estado == EstadoDocumento.SinFirma)
-				{
-					// Traer los datos para firmar y la ubicación
-					resultado = directorio.Path(ConfigurationManager.AppSettings["pathP12"]);
-					string certificado = resultado.Mensaje + documento.certificado;
-					string clave = DesencriptarCadena(documento.clave);
-
-					resultado = Actions.Firmar(documento, certificado, clave, directorio);
-					if (!resultado.Estado) throw new Exception(resultado.Mensaje);
-
-					resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "PPR");
-					if (!resultado.Estado) throw new Exception(resultado.Mensaje);
-					fun.Log($"Se ha firmado correctamente la factura: {documento.Nombre}");
-				}
-				else if (documento.Estado == EstadoDocumento.Firmado)
+				GenerarPDF.Factura(documento, directorio, table);
+                string mensaje = "";
+                if (documento.Estado == EstadoDocumento.SinFirma)
                 {
-					resultado = Actions.ValidarSRI(documento, directorio);
+                    // Traer los datos para firmar y la ubicación
+                    resultado = directorio.Path(ConfigurationManager.AppSettings["pathP12"]);
+                    string certificado = resultado.Mensaje + documento.certificado;
+                    string clave = DesencriptarCadena(documento.clave);
+
+                    resultado = Actions.Firmar(documento, certificado, clave, directorio, table);
+                    mensaje = "firma";
                 }
-			}
+                else if (documento.Estado == EstadoDocumento.Firmado)
+                {
+                    resultado = Actions.ValidarSRI(documento, directorio, table);
+                    mensaje = "envío";
+                }
+                else if (documento.Estado == EstadoDocumento.Recibido)
+                {
+                    resultado = Actions.ConsultarSRI(documento, directorio, table);
+                    mensaje = "recepción";
+                }
+				else if (documento.Estado == EstadoDocumento.Autorizado)
+				{
+					resultado =  GenerarPDF.Factura(documento, directorio, table);
+					mensaje = "generar pdf";
+				}
+				else
+                {
+                    resultado.Estado = false;
+                    resultado.Mensaje = "Ha ocurrido un error desconocido...";
+                }
+
+                if (!resultado.Estado)
+                    fun.Log($"Error en {mensaje} de documento: {documento.Nombre} => {resultado.Estado}");
+                else
+                    fun.Log($"{documento} correcta de documento: {documento.Nombre}");
+            }
 		}
 
 		private void CrearDirectorios()
@@ -172,6 +192,7 @@ namespace FacturaElectronica
 			directorio.Path(EstadoDocumento.Rechazado);
 			directorio.Path(EstadoDocumento.Devuelto);
 			directorio.Path(EstadoDocumento.Autorizado);
+			directorio.Path(EstadoDocumento.Pdf);
 			directorio.Path(ConfigurationManager.AppSettings["pathP12"]);
 		}
 

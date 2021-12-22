@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using java.security;
 using java.io;
 using java.util;
@@ -17,14 +13,13 @@ using es.mityc.firmaJava.libreria.xades;
 using es.mityc.javasign.xml.refs;
 using es.mityc.firmaJava.libreria.utilidades;
 using org.w3c.dom;
-using System.Net.Mail;
-using System.IO;
-using static System.Net.Mime.MediaTypeNames;
 using System.Net;
 using System.Threading;
 using sviudes.blogspot.com;
 using FacturaElectronica.Documento;
 using FacturaElectronica.Tools;
+using FacturaElectronica.SRI;
+using FacturaElectronica.Clases;
 
 namespace FacturaElectronica.Procesos
 {
@@ -97,29 +92,9 @@ namespace FacturaElectronica.Procesos
 
         private static X509Certificate LoadCertificate(string path, string password, out PrivateKey privateKey, out Provider provider)
         {
-            // David: Comentado para probar nuevos cambios
-
             X509Certificate certificate = null;
             provider = null;
             privateKey = null;
-
-            ////Cargar certificado de fichero PFX
-            //KeyStore ks = KeyStore.getInstance("PKCS12");
-            //ks.load(new BufferedInputStream(new FileInputStream(path)), password.ToCharArray());
-            //IPKStoreManager storeManager = new KSStore(ks, new PassStoreKS(password));
-            //List certificates = storeManager.getSignCertificates();
-
-            ////Si encontramos el certificado...
-            //if (certificates != null)
-            //{
-            //    certificate = (X509Certificate)certificates.get(1);
-
-            //    // Obtención de la clave privada asociada al certificado
-            //    privateKey = storeManager.getPrivateKey(certificate);
-
-            //    // Obtención del provider encargado de las labores criptográficas
-            //    provider = storeManager.getProvider(certificate);
-            //}
 
             //Cargar certificado de fichero PFX  
             KeyStore ks = KeyStore.getInstance("PKCS12");
@@ -143,13 +118,13 @@ namespace FacturaElectronica.Procesos
 
         }
 
-        public static Resultado Firmar(DocumentoElectronico Documento, String certificado, String clave, Directorio directorio)
+        public static Resultado Firmar(DocumentoElectronico documento, String certificado, String clave, Directorio directorio, string table)
         {
             Resultado resultado = new Resultado();
-            Resultado pathOrigen = directorio.Path(EstadoDocumento.SinFirma);
-            Resultado pathDestino = directorio.Path(EstadoDocumento.Firmado);
+            Resultado pathSinFirma = directorio.Path(EstadoDocumento.SinFirma);
+            Resultado pathFirmado = directorio.Path(EstadoDocumento.Firmado);
             Resultado validezCertificado = ValidezCertificado(certificado, clave);
-            if (pathOrigen.Estado && pathDestino.Estado && validezCertificado.Estado)
+            if (pathSinFirma.Estado && pathFirmado.Estado && validezCertificado.Estado)
             {
                 try
                 {
@@ -180,35 +155,36 @@ namespace FacturaElectronica.Procesos
                         datosAFirmar.setParentSignNode("comprobante");
 
                         //System.IO.File.WriteAllText(pathOrigen.Mensaje + Documento.Nombre + ".xml", Documento.xml);
-                        Document docToSign = LoadXML(pathOrigen.Mensaje + Documento.Nombre + ".xml");
+                        Document docToSign = LoadXML(pathSinFirma.Mensaje + documento.Nombre + ".xml");
 
-                        Document doc = LoadXML(pathOrigen.Mensaje + Documento.Nombre + ".xml");
+                        Document doc = LoadXML(pathSinFirma.Mensaje + documento.Nombre + ".xml");
                         datosAFirmar.setDocument(doc);
 
                         // SRI:
                         FirmaXML firma = new FirmaXML();
                         Object[] res = firma.signFile(certificate, datosAFirmar, privateKey, provider);
 
-                        FileOutputStream file = new FileOutputStream(pathDestino.Mensaje + Documento.Nombre + ".xml");
+                        FileOutputStream file = new FileOutputStream(pathFirmado.Mensaje + documento.Nombre + ".xml");
 
                         UtilidadTratarNodo.saveDocumentToOutputStream((Document)res[0], file, true);
 
                         // Guardamos la firma a un fichero en el home del usuario
-                        FileOutputStream outputStream = new FileOutputStream(pathDestino.Mensaje + Documento.Nombre + ".xml");
+                        FileOutputStream outputStream = new FileOutputStream(pathFirmado.Mensaje + documento.Nombre + ".xml");
                         UtilidadTratarNodo.saveDocumentToOutputStream((Document)res[0], outputStream, true);
                         outputStream.close();
-                        Documento.Estado = EstadoDocumento.Firmado;
+                        documento.Estado = EstadoDocumento.Firmado;
                         resultado.Estado = true;
-                        System.IO.File.Delete(pathOrigen.Mensaje + Documento.Nombre + ".xml");
+                        System.IO.File.Delete(pathSinFirma.Mensaje + documento.Nombre + ".xml");
 
                         file.flush();
                         file.close();
 
+                        resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "PPR");
                     }
                 }
                 catch (Exception exc)
                 {
-                    Documento.Estado = EstadoDocumento.SinFirma;
+                    documento.Estado = EstadoDocumento.SinFirma;
                     resultado.Estado = false;
                     resultado.Mensaje = exc.Message;
                 }
@@ -216,14 +192,14 @@ namespace FacturaElectronica.Procesos
             else
             {
                 resultado.Estado = false;
-                if (!pathOrigen.Estado)
-                    resultado.Mensaje = "No se ha conseguido cargar el directorio Inicial:\n" + pathOrigen.Mensaje;
-                if (!pathDestino.Estado)
-                    resultado.Mensaje += "No se ha conseguido cargar el directorio de Documentos Firmados:\n" + pathDestino.Mensaje;
+                if (!pathSinFirma.Estado)
+                    resultado.Mensaje = "No se ha conseguido cargar el directorio Inicial:\n" + pathSinFirma.Mensaje;
+                if (!pathFirmado.Estado)
+                    resultado.Mensaje += "No se ha conseguido cargar el directorio de Documentos Firmados:\n" + pathFirmado.Mensaje;
                 if (!validezCertificado.Estado)
                     resultado.Mensaje += "Problemas con el Certificado Digital: " + validezCertificado.Mensaje;
-                pathOrigen = null;
-                pathDestino = null;
+                pathSinFirma = null;
+                pathFirmado = null;
                 validezCertificado = null;
             }
             return resultado;
@@ -237,68 +213,71 @@ namespace FacturaElectronica.Procesos
         }
 
         //Enviar el Documento al SRI para que sa recibido o devuelto
-        public static Resultado ValidarSRI(DocumentoElectronico doc, Directorio directorio)
+        public static Resultado ValidarSRI(DocumentoElectronico documento, Directorio directorio, string table)
         {
-            byte[] sxml = null;
-            Resultado r = new Resultado();
-            Resultado df = directorio.Path(EstadoDocumento.Firmado);
-            Resultado dr = directorio.Path(EstadoDocumento.Recibido);
-            Resultado dd = directorio.Path(EstadoDocumento.Devuelto);
-            if (df.Estado && dr.Estado & dd.Estado)
+            byte[] signedXml = null;
+            Resultado resultado = new Resultado();
+            Resultado pathFirmados = directorio.Path(EstadoDocumento.Firmado);
+            Resultado pathRecibidos = directorio.Path(EstadoDocumento.Recibido);
+            Resultado pathDevuelto = directorio.Path(EstadoDocumento.Devuelto);
+            if (pathFirmados.Estado && pathRecibidos.Estado & pathDevuelto.Estado)
             {
-                string dxml = System.IO.File.ReadAllText(df.Mensaje + doc.Nombre + ".xml");
-                try
-                {
-                    sxml = System.IO.File.ReadAllBytes(df.Mensaje + doc.Nombre + ".xml");
-                }
-                catch (Exception ex)
-                {
-                    r.Estado = false;
-                    r.Mensaje = ex.Message;
-                }
+                //string dxml = System.IO.File.ReadAllText(pathFirmados.Mensaje + documento.Nombre + ".xml");
+                //try
+                //{
+                //    sxml = System.IO.File.ReadAllBytes(pathFirmados.Mensaje + documento.Nombre + ".xml");
+                //}
+                //catch (Exception ex)
+                //{
+                //    resultado.Estado = false;
+                //    resultado.Mensaje = ex.Message;
+                //}
+                signedXml = System.IO.File.ReadAllBytes(pathFirmados.Mensaje + documento.Nombre + ".xml");
                 int intento = 1;
-                if (sxml[0].ToString() != "60")
-                    sxml = sxml.Skip(3).ToArray();
+                if (signedXml[0].ToString() != "60")
+                    signedXml = signedXml.Skip(3).ToArray();
                 Found:
                 try
                 {
-                    using (RecepcionComprobantesService1 rc = new RecepcionComprobantesService1())
+                    using (RecepcionComprobantesService recepComService = new RecepcionComprobantesService())
                     {
-                        rc.Url = Program.getServiciosSRI.FirstOrDefault(x => doc.Ambiente == x.Ambiente).Recepción;
-                        wsRecepcionSRI.respuestaSolicitud rs = new wsRecepcionSRI.respuestaSolicitud();
-                        //respuestaSolicitud  
-                        rs = rc.validarComprobante(sxml);
-                        doc.SoapRecepción = rc.XmlResponse;
-                        var resp = doc.Recepción;
-                        String nError = "", mError = "";
+                        // Cambiar url dependiendo el ambiente
 
+                        //rc.Url = Program.getServiciosSRI.FirstOrDefault(x => doc.Ambiente == x.Ambiente).Recepción;
+                        recepComService.Url = Properties.Settings.Default.SiCtert_FacturaElectrónica_wsRecepcionSRI_RecepcionComprobantesOfflineService;
+                        wsRecepcionSRI.respuestaSolicitud response = new wsRecepcionSRI.respuestaSolicitud();
+                        //respuestaSolicitud  
+                        response = recepComService.validarComprobante(signedXml);
+                        documento.SoapRecepción = recepComService.XmlResponse;
+                        var resp = documento.Recepción;
 
                         if (resp.estado.ToUpper() == "RECIBIDA")
                         {
-                            doc.Estado = EstadoDocumento.Recibido;
-                            r.Estado = true;
-                            System.IO.File.Move(df.Mensaje + doc.Nombre + ".xml", dr.Mensaje + doc.Nombre + ".xml");
+                            documento.Estado = EstadoDocumento.Recibido;
+                            resultado.Estado = true;
+                            System.IO.File.Move(pathFirmados.Mensaje + documento.Nombre + ".xml", pathRecibidos.Mensaje + documento.Nombre + ".xml");
+                            resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "ENV");
                         }
                         else
                         {
-                            doc.Estado = EstadoDocumento.Devuelto;
-                            r.Estado = false;
-                            System.IO.File.Delete(df.Mensaje + doc.Nombre + ".xml");
-                            if (doc.Mensaje == null)
-                                doc.Mensaje = "";
-                            doc.Mensaje = r.Mensaje;
+                            documento.Estado = EstadoDocumento.Devuelto;
+                            resultado.Estado = false;
+                            System.IO.File.Delete(pathFirmados.Mensaje + documento.Nombre + ".xml");
+                            if (documento.Mensaje == null)
+                                documento.Mensaje = "";
+                            documento.Mensaje = resultado.Mensaje;
 
-                            System.IO.File.WriteAllText(dd.Mensaje + doc.Nombre + ".xml", doc.xml + doc.Mensaje);
-                            System.IO.File.Delete(df.Mensaje + doc.Nombre + ".xml");
-                            //System.IO.File.Move(df.Mensaje + doc.Nombre + ".xml", dd.Mensaje + doc.Nombre + ".xml");
+                            System.IO.File.WriteAllText(pathDevuelto.Mensaje + documento.Nombre + ".xml", documento.xml + documento.Mensaje);
+                            //System.IO.File.Delete(pathFirmados.Mensaje + documento.Nombre + ".xml");
+                            resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "NEV");
                         }
-                        ActualizarInfoDocu(doc, nError, mError, dxml);
+                        
                     }
                 }
                 catch (WebException ew)
                 {
-                    r.Estado = false;
-                    r.Mensaje += (ew.Message + "\n");
+                    resultado.Estado = false;
+                    resultado.Mensaje += (ew.Message + "\n");
                     if (intento < 3)
                     {
                         intento++;
@@ -308,8 +287,8 @@ namespace FacturaElectronica.Procesos
                 }
                 catch (Exception ex)
                 {
-                    r.Estado = false;
-                    r.Mensaje += (ex.Message + "\n");
+                    resultado.Estado = false;
+                    resultado.Mensaje += (ex.Message + "\n");
                     if (intento < 3)
                     {
                         intento++;
@@ -320,17 +299,94 @@ namespace FacturaElectronica.Procesos
             }
             else
             {
-                r.Mensaje = "Error: ";
-                r.Estado = false;
+                resultado.Mensaje = "Error: ";
+                resultado.Estado = false;
 
-                if (!df.Estado)
-                    r.Mensaje += "\nNo se ha encontrado el directorio de los documentos Firmados.";
-                if (!dr.Estado)
-                    r.Mensaje += "\nNo se ha encontrado el directorio de los documentos recibidos.";
-                if (!dd.Estado)
-                    r.Mensaje += "\nNo se ha encontrado el directorio de los documentos no recibidos.";
+                if (!pathFirmados.Estado)
+                    resultado.Mensaje += "\nNo se ha encontrado el directorio de los documentos Firmados.";
+                if (!pathRecibidos.Estado)
+                    resultado.Mensaje += "\nNo se ha encontrado el directorio de los documentos recibidos.";
+                if (!pathDevuelto.Estado)
+                    resultado.Mensaje += "\nNo se ha encontrado el directorio de los documentos no recibidos.";
             }
-            return r;
+            return resultado;
         }
+
+        public static Resultado ConsultarSRI(DocumentoElectronico documento, Directorio directorio, string table)
+        {
+            int intento = 1;
+            string mXML = "";
+            intento = 1;
+            Resultado resultado = new Resultado();
+            Resultado pathRecibido = directorio.Path(EstadoDocumento.Recibido);
+            Resultado pathAutorizado = directorio.Path(EstadoDocumento.Autorizado);
+            Resultado pathRechazado = directorio.Path(EstadoDocumento.Rechazado);
+        Consultar:
+            if (pathRecibido.Estado && pathAutorizado.Estado && pathRechazado.Estado)
+            {
+                //  string dxml = System.IO.File.ReadAllText(doc.Mensaje + doc.Nombre + ".xml");
+                //string nError = "";
+                //string mError = "";
+                try
+                {
+                    using (AutorizacionComprobantesService autCompService = new AutorizacionComprobantesService())
+                    {
+                        wsAutorizacionSRI.respuestaComprobante response = new wsAutorizacionSRI.respuestaComprobante();
+                        //ac2.Url = Program.getServiciosSRI.FirstOrDefault(x => x.Ambiente == doc.Ambiente).Autorización;
+                        autCompService.Url = Properties.Settings.Default.SiCtert_FacturaElectrónica_wsRecepcionSRI_RecepcionComprobantesOfflineService;
+                        response = autCompService.autorizacionComprobante(documento.ClaveAcceso);
+                        mXML = autCompService.XmlResponse;
+                        documento.SoapValidar = mXML;
+                        var resp = documento.Autorización;
+                        try
+                        {
+                            resultado.Mensaje += resp.autorizaciones.FirstOrDefault().mensajes.mensaje.tipo + ": " +
+                                resp.autorizaciones.FirstOrDefault().mensajes.mensaje.identificador + "\t" +
+                                resp.autorizaciones.FirstOrDefault().mensajes.mensaje.mensaje;
+                            //nError = resp.autorizaciones.FirstOrDefault().mensajes.mensaje.identificador;
+                            //mError = resp.autorizaciones.FirstOrDefault().mensajes.mensaje.mensaje;
+                        }
+                        catch { resultado.Mensaje = "Ok"; }
+
+                        if (resp.autorizaciones.FirstOrDefault().estado.Trim(' ') == "AUTORIZADO")
+                        {
+                            documento.Estado = EstadoDocumento.Autorizado;
+                            resultado.Estado = true;
+                            // Ingresar factura firmada en el formato del SRI cuando es autorizado
+
+
+                            //System.IO.File.Move(pathRecibido.Mensaje + documento.Nombre + ".xml", pathAutorizado.Mensaje + documento.Nombre + ".xml");
+                            resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "AUT");
+                        }
+                        else
+                        {
+                            documento.Estado = EstadoDocumento.Rechazado;
+                            resultado.Estado = false;
+                            System.IO.File.WriteAllText(pathRechazado.Mensaje + documento.Nombre + ".xml", documento.SoapValidar);
+                            resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "NAT");
+                        }
+                    }
+
+                }
+                catch (WebException we)
+                {
+                    resultado.Estado = false;
+                    resultado.Mensaje += we.Message + "\n";
+                    if (intento < 3)
+                    {
+                        intento++;
+                        Thread.Sleep(2000);
+                        goto Consultar;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    resultado.Estado = false;
+                    resultado.Mensaje += ex.Message + "\n";
+                }
+            }
+            return resultado;
+        }
+    
     }
 }

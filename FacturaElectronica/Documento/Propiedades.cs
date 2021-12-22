@@ -53,10 +53,10 @@ namespace FacturaElectronica.Documento
         Rechazado = 6,
         [XmlEnum("EnviadoMail")]
         EnviadoMail = 7,
-
         [XmlEnum("EnviadoMailOffline")]
-        EnviadoMailOffline = 8
-
+        EnviadoMailOffline = 8,
+        [XmlEnum("PDF")]
+        Pdf = 9,
     }
 
     [Serializable]

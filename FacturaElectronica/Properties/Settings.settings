@@ -1,0 +1,12 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="FacturaElectronica.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="SiCtert_FacturaElectrónica_wsAutorizacionSRI_AutorizacionComprobantesOfflineService" Type="(Web Service URL)" Scope="Application">
+      <Value Profile="(Default)">https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline</Value>
+    </Setting>
+    <Setting Name="SiCtert_FacturaElectrónica_wsRecepcionSRI_RecepcionComprobantesOfflineService" Type="(Web Service URL)" Scope="Application">
+      <Value Profile="(Default)">https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
