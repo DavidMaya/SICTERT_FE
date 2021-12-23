@@ -224,16 +224,6 @@ namespace FacturaElectronica.Procesos
             Resultado pathDevueltos = directorio.Path(EstadoDocumento.Devuelto);
             if (pathFirmados.Estado && pathRecibidos.Estado & pathDevueltos.Estado)
             {
-                //string dxml = System.IO.File.ReadAllText(pathFirmados.Mensaje + documento.Nombre + ".xml");
-                //try
-                //{
-                //    sxml = System.IO.File.ReadAllBytes(pathFirmados.Mensaje + documento.Nombre + ".xml");
-                //}
-                //catch (Exception ex)
-                //{
-                //    resultado.Estado = false;
-                //    resultado.Mensaje = ex.Message;
-                //}
                 signedXml = System.IO.File.ReadAllBytes(pathFirmados.Mensaje + documento.Nombre + ".xml");
                 int intento = 1;
                 if (signedXml[0].ToString() != "60")
@@ -244,7 +234,6 @@ namespace FacturaElectronica.Procesos
                     using (RecepcionComprobantesService1 recepComService = new RecepcionComprobantesService1())
                     {
                         // Cambiar url dependiendo el ambiente
-
                         recepComService.Url = Properties.Settings.Default.SiCtert_FacturaElectrónica_wsRecepcionSRI_RecepcionComprobantesOfflineService;
                         wsRecepcionSRI.respuestaSolicitud response = new wsRecepcionSRI.respuestaSolicitud();
                         //respuestaSolicitud  
@@ -258,8 +247,9 @@ namespace FacturaElectronica.Procesos
                             documento.Estado = EstadoDocumento.Recibido;
                             resultado.Estado = true;
                             // Hay que hacer un cambio aquí:
-
-                            System.IO.File.Move(pathFirmados.Mensaje + documento.Nombre + ".xml", pathRecibidos.Mensaje + documento.Nombre + ".xml");
+                            System.IO.File.Delete(pathRecibidos.Mensaje + documento.Nombre + ".xml");
+                            System.IO.File.Copy(pathFirmados.Mensaje + documento.Nombre + ".xml", 
+                                pathRecibidos.Mensaje + documento.Nombre + ".xml");
                         }
                         else
                         {
@@ -398,6 +388,7 @@ namespace FacturaElectronica.Procesos
                                 XmlElement mensaje = doc.CreateElement("mensajes");
                                 raizAutorizacion.AppendChild(mensaje);
                                 doc.Save(pathAutorizado.Mensaje + documento.Nombre + ".xml");
+                                System.IO.File.Delete(pathRecibido.Mensaje + documento.Nombre + ".xml");
 
                                 documento.Estado = EstadoDocumento.Autorizado;
                                 resultado.Estado = true;

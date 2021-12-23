@@ -861,21 +861,8 @@ namespace FacturaElectronica.Procesos
                         tableHoly.TotalWidth = 350f;
                         tableHoly.SetWidthPercentage(new float[] { 130 }, PageSize.A4);
 
-
-                        //PdfPCell cellPrueba = new PdfPCell(new Paragraph("Creado por NES-SOFT ", FontFactory.GetFont("Arial", 8, BaseColor.WHITE)));
-                        //cellPrueba.BackgroundColor = new BaseColor(54, 81, 167);
-                        //cellPrueba.HorizontalAlignment = 1;
-                        //tableHoly.AddCell(cellPrueba);
-                        //if (dtDetalle.Rows.Count <= 5)
-                        //{
-                        //    tableHoly.WriteSelectedRows(0, 1, 250, doc.BottomMargin, pcb);
-                        //}
-                        //else
-                        //{
-                        //    doc.Add(tableHoly);
-                        //}
-
                         resultado.Estado = true;
+                        System.IO.File.Delete(pathFirmado.Mensaje + documento.Nombre + ".xml");
 
                         doc.Close();
                         fs.Close();

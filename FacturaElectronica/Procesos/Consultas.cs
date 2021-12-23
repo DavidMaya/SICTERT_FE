@@ -55,7 +55,8 @@ namespace FacturaElectronica.Clases
                             ruc = "1891760171001",
                             estab = "001",
                             ptoEmi = "001",
-                            secuencial = "000000111",
+                            secuencial = "000000114",
+
                             dirMatriz = "Portoviejo 02-44 y Tulcán",
                             regimenMicroempresas = "CONTRIBUYENTE RÉGIMEN MICROEMPRESAS",
                             agenteRetencion = "0"

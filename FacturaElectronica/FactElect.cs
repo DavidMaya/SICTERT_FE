@@ -102,7 +102,18 @@ namespace FacturaElectronica
 			runTim.Stop();
 			try
 			{
+				// Tabla FACTURA
 				ProcesarDocumentos("Id_Factura", "FACTURA", "FACTURA_CONCEPTO");
+				
+				//Tabla FACTURA_BOLETOS
+				ProcesarDocumentos("Id_factura_boleto", "FACTURA_BOLETO", "DETALLE_FACT_BOLETO");
+
+				//Tabla FACTURA_PARQUEO
+				ProcesarDocumentos("Id_factura_parqueo", "FACTURA_PARQUEO", "DETALLE_FACT_PARQUEO");
+
+				//Tabla FACTURA_PARQUEO
+				ProcesarDocumentos("Id_factura_parqueo", "FACTURA_PARQUEO", "DETALLE_FACT_PARQUEO");
+
 
 			}
 			catch (Exception ex)
@@ -125,19 +136,19 @@ namespace FacturaElectronica
             documentos = Consultas.GetListFacturas(id, table, tableDetalles, directorio);
 			fun.Log($"Se han creado {documentos.Count()} documentos de la tabla {table} para ser firmados");
 
-			Actions.ConsultarSRI(documentos.FirstOrDefault(), directorio, table);
+			//Actions.ConsultarSRI(documentos.FirstOrDefault(), directorio, table);
 
             // Proceso de firmar
-            //Actividad(EstadoDocumento.SinFirma, table);
+            Actividad(EstadoDocumento.SinFirma, table);
 
             // Proceso de enviar al SRI
-            //Actividad(EstadoDocumento.Firmado, table);
+            Actividad(EstadoDocumento.Firmado, table);
 
             // Proceso de consultar al SRI
-            //Actividad(EstadoDocumento.Recibido, table);
+            Actividad(EstadoDocumento.Recibido, table);
 
             // Creación de pdf
-            //Actividad(EstadoDocumento.Autorizado, table);
+            Actividad(EstadoDocumento.Autorizado, table);
         }
 
 		private void Actividad(EstadoDocumento Estado, string table)
