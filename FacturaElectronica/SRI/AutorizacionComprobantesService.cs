@@ -4,7 +4,7 @@ using System.Web.Services.Protocols;
 
 namespace FacturaElectronica.SRI
 {
-    public class AutorizacionComprobantesService : AutorizacionComprobantesOfflineService
+    public class AutorizacionComprobantesService1 : AutorizacionComprobantesService
     {
         private XmlWriterSpy writer;
         private XmlReaderSpy reader;

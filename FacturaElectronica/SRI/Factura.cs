@@ -60,6 +60,8 @@ namespace FacturaElectronica.SRI
         public string ptoEmi { get; set; }
         public string secuencial { get; set; }
         public string dirMatriz { get; set; }
+        public string regimenMicroempresas { get; set; }
+        public string agenteRetencion { get; set; }
     }
 
     [GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
@@ -69,52 +71,52 @@ namespace FacturaElectronica.SRI
     [XmlTypeAttribute(AnonymousType = true)]
     public partial class facturaInfoFactura
     {
-
         public string fechaEmision { get; set; }
         public string dirEstablecimiento { get; set; }
-        public short contribuyenteEspecial { get; set; }
+        public string contribuyenteEspecial { get; set; }
         public string obligadoContabilidad { get; set; }
         public string tipoIdentificacionComprador { get; set; }
         public string guiaRemision { get; set; }
         public string razonSocialComprador { get; set; }
         public string identificacionComprador { get; set; }
-        public float totalSinImpuestos { get; set; }
-        public float totalDescuento { get; set; }
+        public string direccionComprador { get; set; }
+        public string totalSinImpuestos { get; set; }
+        public string totalDescuento { get; set; }
         [XmlArrayItemAttribute("totalImpuesto", IsNullable = false)]
         public List<facturaInfoFacturaTotalImpuesto> totalConImpuestos { get; set; }
-        public float propina { get; set; }
-        public float importeTotal { get; set; }
+        public string propina { get; set; }
+        public string importeTotal { get; set; }
         public string moneda { get; set; }
         [XmlArrayItemAttribute("pago", IsNullable = false)]
         public List<facturaPago> pagos { get; set; }
-        [XmlIgnore]
-        public Double TarifaIVA
-        {
-            get
-            {
-                double r = 0;
-                foreach (facturaInfoFacturaTotalImpuesto i in totalConImpuestos)
-                {
-                    if (r < i.tarifa)
-                        r = i.tarifa;
-                }
-                return r;
-            }
-        }
-        [XmlIgnore]
-        public Double MontoIVA
-        {
-            get
-            {
-                double r = 0;
-                foreach (facturaInfoFacturaTotalImpuesto i in totalConImpuestos)
-                {
-                    if (i.tarifa != 0)
-                        r = i.valor;
-                }
-                return r;
-            }
-        }
+        //[XmlIgnore]
+        //public Double TarifaIVA
+        //{
+        //    get
+        //    {
+        //        double r = 0;
+        //        foreach (facturaInfoFacturaTotalImpuesto i in totalConImpuestos)
+        //        {
+        //            if (r < i.tarifa)
+        //                r = i.tarifa;
+        //        }
+        //        return r;
+        //    }
+        //}
+        //[XmlIgnore]
+        //public Double MontoIVA
+        //{
+        //    get
+        //    {
+        //        double r = 0;
+        //        foreach (facturaInfoFacturaTotalImpuesto i in totalConImpuestos)
+        //        {
+        //            if (i.tarifa != 0)
+        //                r = i.valor;
+        //        }
+        //        return r;
+        //    }
+        //}
     }
 
     [GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
@@ -126,11 +128,10 @@ namespace FacturaElectronica.SRI
     {
         public string codigo { get; set; }
         public string codigoPorcentaje { get; set; }
-        public float descuentoAdicional { get; set; }
-        public float baseImponible { get; set; }
-        [XmlIgnore]
-        public float tarifa { get; set; }
-        public float valor { get; set; }
+        public string descuentoAdicional { get; set; }
+        public string baseImponible { get; set; }
+        public string tarifa { get; set; }
+        public string valor { get; set; }
     }
 
     [GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
@@ -141,7 +142,7 @@ namespace FacturaElectronica.SRI
     public partial class facturaPago
     {
         public string formaPago { get; set; }
-        public float importeTotal { get; set; }
+        public string total { get; set; }
     }
 
     [GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
@@ -156,17 +157,18 @@ namespace FacturaElectronica.SRI
         public string codigoPrincipal { get; set; }
         public string codigoAuxiliar { get; set; }
         public string descripcion { get; set; }
-        public float cantidad { get; set; }
-        public string precioUnitario
-        {
-            get
-            {
-                return pUnit.ToString("F6").Replace(",", ".");
-            }
-            set { pUnit = Convert.ToDouble(value.Replace(".", ",")); }
-        }
-        public float descuento { get; set; }
-        public float precioTotalSinImpuesto { get; set; }
+        public string cantidad { get; set; }
+        public string precioUnitario { get; set; }
+        //public string precioUnitario
+        //{
+        //    get
+        //    {
+        //        return pUnit.ToString("F6").Replace(",", ".");
+        //    }
+        //    set { pUnit = Convert.ToDouble(value.Replace(".", ",")); }
+        //}
+        public string descuento { get; set; }
+        public string precioTotalSinImpuesto { get; set; }
         public facturaDetalleImpuestos impuestos { get; set; }
     }
 
@@ -190,9 +192,9 @@ namespace FacturaElectronica.SRI
 
         public string codigo { get; set; }
         public string codigoPorcentaje { get; set; }
-        public float tarifa { get; set; }
-        public float baseImponible { get; set; }
-        public float valor { get; set; }
+        public string tarifa { get; set; }
+        public string baseImponible { get; set; }
+        public string valor { get; set; }
     }
 
     /// <comentarios/>

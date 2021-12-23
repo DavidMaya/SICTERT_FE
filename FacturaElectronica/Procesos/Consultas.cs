@@ -55,8 +55,10 @@ namespace FacturaElectronica.Clases
                             ruc = "1891760171001",
                             estab = "001",
                             ptoEmi = "001",
-                            secuencial = "000000110",
-                            dirMatriz = "Portoviejo 02-44 y Tulcán"
+                            secuencial = "000000111",
+                            dirMatriz = "Portoviejo 02-44 y Tulcán",
+                            regimenMicroempresas = "CONTRIBUYENTE RÉGIMEN MICROEMPRESAS",
+                            agenteRetencion = "0"
                         };
 
                         fact.infoFactura = new facturaInfoFactura()
@@ -64,20 +66,20 @@ namespace FacturaElectronica.Clases
                             //fechaEmision = inf["fechaEmision"].ToString(),
                             //dirEstablecimiento = inf["dirEstablecimiento"].ToString(),
                             //contribuyenteEspecial = (short)(inf["obligadoContabilidad"] == null ? 0 : Convert.ToInt16(inf["obligadoContabilidad"].ToString())),
-                            contribuyenteEspecial = 0,
                             obligadoContabilidad = inf["obligadoContabilidad"].ToString(),
                             tipoIdentificacionComprador = "05",
                             razonSocialComprador = inf["razonSocialComprador"].ToString(),
+                            direccionComprador = inf["direccionComprador"].ToString(),
                             identificacionComprador = inf["identificacionComprador"].ToString(),
-                            totalSinImpuestos = float.Parse(inf["totalSinImpuestos"].ToString()),
-                            totalDescuento = 0,
+                            totalSinImpuestos = inf["totalSinImpuestos"].ToString().Replace(',', '.'),
+                            totalDescuento = "0.00",
                             totalConImpuestos = new List<facturaInfoFacturaTotalImpuesto>(),
-                            propina = 0,
-                            importeTotal = float.Parse(inf["importeTotal"].ToString()),
+                            propina = "0.00",
+                            importeTotal = inf["importeTotal"].ToString().Replace(',', '.'),
 
                             // Test
                             moneda = "DOLAR",
-                            fechaEmision = "21/12/2021",
+                            fechaEmision = "22/12/2021",
                             dirEstablecimiento = "Portoviejo 02-44 y Tulcán"
                         };
 
@@ -91,9 +93,11 @@ namespace FacturaElectronica.Clases
                             {
                                 fact.infoFactura.totalConImpuestos.Add(new facturaInfoFacturaTotalImpuesto()
                                 {
-                                    codigo = imp["codigo"].ToString(),
+                                    codigo = "2",
                                     codigoPorcentaje = imp["codigoPorcentaje"].ToString(),
-                                    baseImponible = float.Parse(imp["baseImponible"].ToString())
+                                    baseImponible = imp["baseImponible"].ToString().Replace(',', '.'),
+                                    tarifa = "0",
+                                    valor = imp["valor"].ToString().Replace(',', '.'),
                                 });
                             }
                         }
@@ -103,7 +107,7 @@ namespace FacturaElectronica.Clases
                         fact.infoFactura.pagos.Add(new facturaPago()
                         {
                             formaPago = "01",
-                            importeTotal = float.Parse(inf["importeTotal"].ToString())
+                            total = inf["importeTotal"].ToString().Replace(',', '.')
                         });
 
                         // Agregar detalles
@@ -117,17 +121,18 @@ namespace FacturaElectronica.Clases
                                 facturaDetalle.codigoPrincipal = detalle["codigoPrincipal"].ToString();
                                 facturaDetalle.codigoAuxiliar = detalle["codigoPrincipal"].ToString();
                                 facturaDetalle.descripcion = detalle["descripcion"].ToString();
-                                facturaDetalle.cantidad = float.Parse(detalle["cantidad"].ToString());
-                                facturaDetalle.precioUnitario = detalle["precioUnitario"].ToString();
-                                facturaDetalle.descuento = 0;
-                                facturaDetalle.precioTotalSinImpuesto = float.Parse(detalle["precioTotalSinImpuesto"].ToString());
+                                facturaDetalle.cantidad = detalle["cantidad"].ToString().Replace(',', '.');
+                                facturaDetalle.precioUnitario = detalle["precioUnitario"].ToString().Replace(',', '.');
+                                facturaDetalle.descuento = "0";
+                                facturaDetalle.precioTotalSinImpuesto = detalle["precioTotalSinImpuesto"].ToString().Replace(',', '.');
                                 facturaDetalle.impuestos = new facturaDetalleImpuestos();
                                 facturaDetalle.impuestos.impuesto = new facturaDetalleImpuestosImpuesto();
-                                facturaDetalle.impuestos.impuesto.codigo = detalle["codigo"].ToString();
+                                facturaDetalle.impuestos.impuesto.codigo = "2";
                                 facturaDetalle.impuestos.impuesto.codigoPorcentaje = detalle["codigoPorcentaje"].ToString();
-                                facturaDetalle.impuestos.impuesto.tarifa = float.Parse(detalle["tarifa"].ToString());
-                                facturaDetalle.impuestos.impuesto.baseImponible = float.Parse(detalle["precioTotalSinImpuesto"].ToString());
-                                facturaDetalle.impuestos.impuesto.valor = float.Parse(detalle["valor"].ToString());
+                                //facturaDetalle.impuestos.impuesto.tarifa = detalle["tarifa"].ToString().Replace(',', '.');
+                                facturaDetalle.impuestos.impuesto.tarifa = "0";
+                                facturaDetalle.impuestos.impuesto.baseImponible = detalle["precioTotalSinImpuesto"].ToString().Replace(',', '.');
+                                facturaDetalle.impuestos.impuesto.valor = detalle["valor"].ToString().Replace(',', '.');
                                 fact.detalles.Add(facturaDetalle);
                             }
                         }
@@ -145,7 +150,7 @@ namespace FacturaElectronica.Clases
                         fact.infoAdicional.Add(new facturaCampoAdicional()
                         {
                             nombre = "Email",
-                            Value = inf["Email"].ToString()
+                            Value = inf["Email"].ToString() == "" ? "example@email.com" : inf["Email"].ToString()
                         });
 
                         // Agregar clave de acceso a datos
@@ -158,7 +163,9 @@ namespace FacturaElectronica.Clases
                             fact.infoTributaria.secuencial,
                             fact.infoTributaria.tipoEmision.ToString());
 
-                        documento.xml = XmlTools.Serialize(fact);
+                        documento.ClaveAcceso = fact.infoTributaria.claveAcceso;
+
+                        //documento.xml = XmlTools.Serialize(fact);
                         // Crear xml sin firma en la carpeta seleccionada
                         System.IO.File.WriteAllText(pathDestino.Mensaje + documento.Nombre + ".xml", XmlTools.Serialize(fact)); documentos.Add(documento);
                     }

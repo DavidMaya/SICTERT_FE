@@ -125,17 +125,19 @@ namespace FacturaElectronica
             documentos = Consultas.GetListFacturas(id, table, tableDetalles, directorio);
 			fun.Log($"Se han creado {documentos.Count()} documentos de la tabla {table} para ser firmados");
 
-			// Proceso de firmar
-			Actividad(EstadoDocumento.SinFirma, table);
+			Actions.ConsultarSRI(documentos.FirstOrDefault(), directorio, table);
+
+            // Proceso de firmar
+            //Actividad(EstadoDocumento.SinFirma, table);
 
             // Proceso de enviar al SRI
-            Actividad(EstadoDocumento.Firmado, table);
+            //Actividad(EstadoDocumento.Firmado, table);
 
             // Proceso de consultar al SRI
-            Actividad(EstadoDocumento.Recibido, table);
+            //Actividad(EstadoDocumento.Recibido, table);
 
             // Creación de pdf
-            Actividad(EstadoDocumento.Autorizado, table);
+            //Actividad(EstadoDocumento.Autorizado, table);
         }
 
 		private void Actividad(EstadoDocumento Estado, string table)
@@ -144,7 +146,6 @@ namespace FacturaElectronica
 
 			foreach (DocumentoElectronico documento in documentos.Where(xx => xx.Estado == Estado))
             {
-				//GenerarPDF.Factura(documento, directorio, table);
                 string mensaje = "";
                 if (documento.Estado == EstadoDocumento.SinFirma)
                 {

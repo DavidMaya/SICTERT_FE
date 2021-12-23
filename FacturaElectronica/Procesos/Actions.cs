@@ -241,7 +241,7 @@ namespace FacturaElectronica.Procesos
                 Found:
                 try
                 {
-                    using (RecepcionComprobantesService recepComService = new RecepcionComprobantesService())
+                    using (RecepcionComprobantesService1 recepComService = new RecepcionComprobantesService1())
                     {
                         // Cambiar url dependiendo el ambiente
 
@@ -326,6 +326,7 @@ namespace FacturaElectronica.Procesos
             string mXML = "";
             intento = 1;
             Resultado resultado = new Resultado();
+            Resultado pathFirmados = directorio.Path(EstadoDocumento.Firmado);
             Resultado pathRecibido = directorio.Path(EstadoDocumento.Recibido);
             Resultado pathAutorizado = directorio.Path(EstadoDocumento.Autorizado);
             Resultado pathRechazado = directorio.Path(EstadoDocumento.Rechazado);
@@ -337,34 +338,71 @@ namespace FacturaElectronica.Procesos
                 //string mError = "";
                 try
                 {
-                    using (AutorizacionComprobantesService autCompService = new AutorizacionComprobantesService())
+                    using (AutorizacionComprobantesService1 autCompService = new AutorizacionComprobantesService1())
                     {
+                        string estadoAutorizado = String.Empty;
+                        string fechaAutorizacion = String.Empty;
+
                         wsAutorizacionSRI.respuestaComprobante response = new wsAutorizacionSRI.respuestaComprobante();
                         //ac2.Url = Program.getServiciosSRI.FirstOrDefault(x => x.Ambiente == doc.Ambiente).Autorización;
-                        autCompService.Url = Properties.Settings.Default.SiCtert_FacturaElectrónica_wsRecepcionSRI_RecepcionComprobantesOfflineService;
+                        autCompService.Url = Properties.Settings.Default.SiCtert_FacturaElectrónica_wsAutorizacionSRI_AutorizacionComprobantesOfflineService;
                         response = autCompService.autorizacionComprobante(documento.ClaveAcceso);
                         mXML = autCompService.XmlResponse;
                         documento.SoapValidar = mXML;
                         var resp = documento.Autorización;
+
+
+                        //XmlNodeList xnList = xml.SelectNodes("/data/Table");
+
                         try
                         {
-                            resultado.Mensaje += resp.autorizaciones.FirstOrDefault().mensajes.mensaje.tipo + ": " +
-                                resp.autorizaciones.FirstOrDefault().mensajes.mensaje.identificador + "\t" +
-                                resp.autorizaciones.FirstOrDefault().mensajes.mensaje.mensaje;
-                            //nError = resp.autorizaciones.FirstOrDefault().mensajes.mensaje.identificador;
-                            //mError = resp.autorizaciones.FirstOrDefault().mensajes.mensaje.mensaje;
+                            estadoAutorizado = resp.autorizaciones[0].estado;
+                            fechaAutorizacion = resp.autorizaciones[0].fechaAutorizacion;
                         }
                         catch { resultado.Mensaje = "Ok"; }
 
                         if (resp.autorizaciones.FirstOrDefault().estado.Trim(' ') == "AUTORIZADO")
                         {
-                            documento.Estado = EstadoDocumento.Autorizado;
-                            resultado.Estado = true;
-                            // Ingresar factura firmada en el formato del SRI cuando es autorizado
-
-
-                            //System.IO.File.Move(pathRecibido.Mensaje + documento.Nombre + ".xml", pathAutorizado.Mensaje + documento.Nombre + ".xml");
                             resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "AUT");
+                            //resultado.Estado = true;
+                            // Ingresar factura firmada en el formato del SRI cuando es autorizado
+                            if (!string.IsNullOrEmpty(estadoAutorizado) && !string.IsNullOrEmpty(documento.ClaveAcceso) && !string.IsNullOrEmpty(fechaAutorizacion))
+                            {
+                                // Crear el xml de autorización a partir del xml de firma.
+                                XmlDocument doc = new XmlDocument();
+                                XmlDeclaration xmlDeclaration = doc.CreateXmlDeclaration("1.0", "UTF-8", "yes");
+                                XmlNode root = doc.DocumentElement;
+                                doc.InsertBefore(xmlDeclaration, root);
+                                XmlElement raizAutorizacion = doc.CreateElement("autorizacion");
+                                doc.AppendChild(raizAutorizacion);
+                                XmlElement estado = doc.CreateElement("estado");
+                                estado.AppendChild(doc.CreateTextNode(estadoAutorizado));
+                                raizAutorizacion.AppendChild(estado);
+
+                                XmlElement numeroAutorizacion = doc.CreateElement("numeroAutorizacion");
+                                numeroAutorizacion.AppendChild(doc.CreateTextNode(documento.ClaveAcceso));
+                                raizAutorizacion.AppendChild(numeroAutorizacion);
+
+                                XmlElement fechaAutorizacionXml = doc.CreateElement("fechaAutorizacion");
+                                fechaAutorizacionXml.SetAttribute("class", "fechaAutorizacion");
+                                fechaAutorizacionXml.AppendChild(doc.CreateTextNode(fechaAutorizacion));
+                                raizAutorizacion.AppendChild(fechaAutorizacionXml);
+                                string xmlText = System.IO.File.ReadAllText(pathFirmados.Mensaje + documento.Nombre + ".xml");
+                                var cdata = new XmlDocument();
+                                cdata.LoadXml(xmlText);
+
+                                XmlElement comprobante = doc.CreateElement("comprobante");
+                                comprobante.AppendChild(doc.CreateCDataSection(xmlText.ToString()));
+                                raizAutorizacion.AppendChild(comprobante);
+
+                                XmlElement mensaje = doc.CreateElement("mensajes");
+                                raizAutorizacion.AppendChild(mensaje);
+                                doc.Save(pathAutorizado.Mensaje + documento.Nombre + ".xml");
+
+                                documento.Estado = EstadoDocumento.Autorizado;
+                                resultado.Estado = true;
+                                resultado.Mensaje = $"{estadoAutorizado} en {fechaAutorizacion}";
+                            }
                         }
                         else
                         {

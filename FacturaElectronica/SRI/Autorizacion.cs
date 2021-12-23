@@ -37,7 +37,7 @@ namespace FacturaElectronica.SRI
     {
         public string estado { get; set; }
         public string numeroAutorizacion { get; set; }
-        public System.DateTime fechaAutorizacion { get; set; }
+        public string fechaAutorizacion { get; set; }
         public string ambiente { get; set; }
         public autorizacionComprobante comprobante { get; set; }
         public autorizacionMensajes mensajes { get; set; }

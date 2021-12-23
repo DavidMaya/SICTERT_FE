@@ -35,13 +35,13 @@ namespace FacturaElectronica.Tools
             try
             {
                 var xmlSerialize = new XmlSerializer(typeof(T));
-                //XmlSerializerNamespaces namespaces = new XmlSerializerNamespaces();
-                //namespaces.Add("", "");
+                XmlSerializerNamespaces namespaces = new XmlSerializerNamespaces();
+                namespaces.Add("", "");
                 var stringWriter = new Utf8StringWriter();
                 using (var writer = XmlWriter.Create(stringWriter, new XmlWriterSettings { Indent = true }))
                 {
                     writer.WriteProcessingInstruction("xml", @"version=""1.0"" encoding=""UTF-8"" standalone=""yes""");
-                    xmlSerialize.Serialize(writer, value);
+                    xmlSerialize.Serialize(writer, value, namespaces);
                     return stringWriter.ToString();
                 }
             }

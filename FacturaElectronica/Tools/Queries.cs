@@ -27,6 +27,7 @@ namespace FacturaElectronica.Clases
                 "IIF(f.ObligadoContab_Emisor = 1, 'SI', 'NO') AS obligadoContabilidad, " +
                 "f.Razon_Social AS razonSocialComprador, " +
                 "f.CI_Ruc AS identificacionComprador, " +
+                "f.Direccion AS direccionComprador, " +
                 "CONVERT(DECIMAL(10, 2), (f.Valor + f.ValorBaseIVA)) AS totalSinImpuestos, " +
                 "CONVERT(DECIMAL(10,2), f.Valor_Total) AS importeTotal, " +
                 // infoAdicional
@@ -43,10 +44,10 @@ namespace FacturaElectronica.Clases
         public static string SelectImpuestosGeneric(string id, string table, long idFactura)
         {
             return "SELECT " +
-                "CASE WHEN dfr.Iva = 0 THEN 0 WHEN dfr.Iva = 12 THEN 2 END AS codigo, " +
                 "CASE WHEN dfr.Iva = 0 THEN 0 WHEN dfr.Iva = 12 THEN 2 " +
                 "WHEN dfr.Iva = 14 THEN 3 END AS codigoPorcentaje, " +
-                "CONVERT(DECIMAL(10, 2), SUM(dfr.Valor * dfr.Cantidad)) AS baseImponible " +
+                "CONVERT(DECIMAL(10, 2), SUM(dfr.Valor * dfr.Cantidad)) AS baseImponible, " +
+                "CONVERT(DECIMAL(10, 2), SUM(dfr.Iva)) AS valor " +
                 $"FROM {table} dfr " +
                 $"WHERE dfr.{id} = {idFactura} " +
                 "GROUP BY dfr.Iva";
@@ -62,10 +63,9 @@ namespace FacturaElectronica.Clases
                 "dfr.Cantidad AS cantidad, " +
                 "CONVERT(DECIMAL(10, 2), dfr.Valor) AS precioUnitario, " +
                 "CONVERT(DECIMAL(10, 2), dfr.Valor * dfr.Cantidad) AS precioTotalSinImpuesto, " +
-                "CASE WHEN dfr.Iva = 0 THEN 0 WHEN dfr.Iva = 12 THEN 2 END AS codigo, " +
                 "CASE WHEN dfr.Iva = 0 THEN 0 WHEN dfr.Iva = 12 THEN 2 " +
                 "WHEN dfr.Iva = 14 THEN 3 END AS codigoPorcentaje, " +
-                "dfr.Iva AS tarifa " +
+                "CONVERT(DECIMAL(10, 2), dfr.Iva) AS tarifa " +
                 field + 
                 $"FROM {table} dfr " +
                 $"WHERE dfr.{id} = {idFactura}";

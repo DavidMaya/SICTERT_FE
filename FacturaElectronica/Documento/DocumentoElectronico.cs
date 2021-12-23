@@ -28,28 +28,7 @@ namespace FacturaElectronica.Documento
             }
         }
         [XmlIgnore]
-        public string ClaveAcceso
-        {
-            get
-            {
-                string r = "";
-                switch (Tipo)
-                {
-                    case TipoDocumento.Factura:
-                        r = this.Factura.infoTributaria.claveAcceso;
-                        break;
-                    //case TipoDocumento.NotaCredito:
-                    //    r = this.NotaCredito.infoTributaria.claveAcceso;
-                    //    break;
-                    //case TipoDocumento.Retencion:
-                    //    r = this.Retención.infoTributaria.claveAcceso;
-                    //    break;
-                    //case TipoDocumento.GuiaRemision:
-                    //    break;
-                }
-                return r;
-            }
-        }
+        public string ClaveAcceso { get; set; }
 
         [XmlIgnore]
         public string SecuencialDocumento
