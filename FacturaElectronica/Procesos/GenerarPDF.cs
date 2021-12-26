@@ -1,16 +1,11 @@
 ﻿using FacturaElectronica.Documento;
-using FacturaElectronica.SRI;
 using FacturaElectronica.Tools;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Linq;
 
 namespace FacturaElectronica.Procesos
@@ -53,8 +48,10 @@ namespace FacturaElectronica.Procesos
                 dirMatriz = (from item in FacturaXML.Descendants("dirMatriz")
                              select item.Value).FirstOrDefault();
                 //infoFactura
-                string fechaEmision, dirEstablecimiento, contribuyenteEspecial, obligadoContabilidad, tipoIdentificacionComprador, razonSocialComprador, identificacionComprador,
-                    totalSinImpuestos, totalDescuento, codigo, codigoPorcentaje, baseImponible, valor, propina, importeTotal, moneda, formaPago, total;
+                string fechaEmision, dirEstablecimiento, contribuyenteEspecial, 
+                    obligadoContabilidad, tipoIdentificacionComprador, razonSocialComprador, 
+                    identificacionComprador, totalSinImpuestos, totalDescuento, codigo, 
+                    codigoPorcentaje, baseImponible, valor, propina, importeTotal, moneda, formaPago, total;
 
                 fechaEmision = (from item in FacturaXML.Descendants("fechaEmision")
                                 select item.Value).FirstOrDefault();

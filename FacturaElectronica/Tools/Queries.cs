@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FacturaElectronica.Clases
+﻿namespace FacturaElectronica.Clases
 {
     public static class Queries
     {
@@ -44,8 +38,7 @@ namespace FacturaElectronica.Clases
         public static string SelectImpuestosGeneric(string id, string table, long idFactura)
         {
             return "SELECT " +
-                "CASE WHEN dfr.Iva = 0 THEN 0 WHEN dfr.Iva = 12 THEN 2 " +
-                "WHEN dfr.Iva = 14 THEN 3 END AS codigoPorcentaje, " +
+                "IIF(dfr.Iva >= 0, 0, 2) AS codigoPorcentaje, " +
                 "CONVERT(DECIMAL(10, 2), SUM(dfr.Valor * dfr.Cantidad)) AS baseImponible, " +
                 "CONVERT(DECIMAL(10, 2), SUM(dfr.Iva)) AS valor " +
                 $"FROM {table} dfr " +
@@ -56,15 +49,14 @@ namespace FacturaElectronica.Clases
         public static string SelectDetalleGeneric(string id, string table, long idFactura)
         {
             string field = table != "FACTURA_CONCEPTO" ? 
-                ", dfr.Iva_Valor AS valor " : ", CONVERT(DECIMAL(10, 2), dfr.Valor * dfr.Cantidad) AS valor "; //Aquí puede haber un cambio en el Iva
+                ", dfr.Iva_Valor AS valor " : ", CONVERT(DECIMAL(10, 2), dfr.Valor * dfr.Cantidad) AS valor ";
+
             return "SELECT " +
                 "dfr.Id_Concepto_Cuenta AS codigoPrincipal, " +
                 "dfr.Nombre AS descripcion, " +
                 "dfr.Cantidad AS cantidad, " +
                 "CONVERT(DECIMAL(10, 2), dfr.Valor) AS precioUnitario, " +
-                "CONVERT(DECIMAL(10, 2), dfr.Valor * dfr.Cantidad) AS precioTotalSinImpuesto, " +
-                "CASE WHEN dfr.Iva = 0 THEN 0 WHEN dfr.Iva = 12 THEN 2 " +
-                "WHEN dfr.Iva = 14 THEN 3 END AS codigoPorcentaje, " +
+                "IIF(dfr.Iva >= 0, 0, 2) AS codigoPorcentaje, " +
                 "CONVERT(DECIMAL(10, 2), dfr.Iva) AS tarifa " +
                 field + 
                 $"FROM {table} dfr " +

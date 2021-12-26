@@ -30,6 +30,7 @@ namespace FacturaElectronica
 		public static string path = AppDomain.CurrentDomain.BaseDirectory + "\\log-factelect.txt";
 		public static funciones fun = new funciones(DirectorioTrabajo, path, ArchivoLog);
 		private static Directorio directorio = new Directorio(DirectorioTrabajo, ConfigurationManager.AppSettings["pathDocs"]);
+		Resultado resultado = new Resultado();
 
 		List<DocumentoElectronico> documentos = null;
 
@@ -102,19 +103,21 @@ namespace FacturaElectronica
 			runTim.Stop();
 			try
 			{
+				//Probar si existe conexión a Internet.
+				resultado = Actions.ProbarConexionInternet();
+				if (!resultado.Estado) throw new Exception(resultado.Mensaje);
+				
+				// Crear directorios antes de empezar
+				CrearDirectorios();
+				
 				// Tabla FACTURA
 				ProcesarDocumentos("Id_Factura", "FACTURA", "FACTURA_CONCEPTO");
-				
-				//Tabla FACTURA_BOLETOS
+				// Tabla FACTURA_BOLETOS
 				ProcesarDocumentos("Id_factura_boleto", "FACTURA_BOLETO", "DETALLE_FACT_BOLETO");
-
-				//Tabla FACTURA_PARQUEO
+				// Tabla FACTURA_PARQUEO
 				ProcesarDocumentos("Id_factura_parqueo", "FACTURA_PARQUEO", "DETALLE_FACT_PARQUEO");
-
-				//Tabla FACTURA_PARQUEO
+				// Tabla FACTURA_PARQUEO
 				ProcesarDocumentos("Id_factura_parqueo", "FACTURA_PARQUEO", "DETALLE_FACT_PARQUEO");
-
-
 			}
 			catch (Exception ex)
 			{
@@ -136,34 +139,31 @@ namespace FacturaElectronica
             documentos = Consultas.GetListFacturas(id, table, tableDetalles, directorio);
 			fun.Log($"Se han creado {documentos.Count()} documentos de la tabla {table} para ser firmados");
 
-			//Actions.ConsultarSRI(documentos.FirstOrDefault(), directorio, table);
-
             // Proceso de firmar
             Actividad(EstadoDocumento.SinFirma, table);
-
             // Proceso de enviar al SRI
             Actividad(EstadoDocumento.Firmado, table);
-
             // Proceso de consultar al SRI
             Actividad(EstadoDocumento.Recibido, table);
-
             // Creación de pdf
             Actividad(EstadoDocumento.Autorizado, table);
         }
 
 		private void Actividad(EstadoDocumento Estado, string table)
         {
-			Resultado resultado = new Resultado();
-
+			resultado = new Resultado();
 			foreach (DocumentoElectronico documento in documentos.Where(xx => xx.Estado == Estado))
             {
                 string mensaje = "";
                 if (documento.Estado == EstadoDocumento.SinFirma)
                 {
                     // Traer los datos para firmar y la ubicación
-                    resultado = directorio.Path(ConfigurationManager.AppSettings["pathP12"]);
                     string certificado = resultado.Mensaje + documento.certificado;
                     string clave = DesencriptarCadena(documento.clave);
+
+					//Revisar si el certificado es correcto.
+					resultado = Actions.ProbarCertificado(certificado, clave);
+					if (!resultado.Estado) throw new Exception(resultado.Mensaje);
 
                     resultado = Actions.Firmar(documento, certificado, clave, directorio, table);
                     mensaje = "firma";
@@ -231,9 +231,7 @@ namespace FacturaElectronica
 			SqlServer.CadenaConexion = CadenaSQLServer;
 
 			fun.Log("Inicializando servicio de facturación electrónica...");
-			//fun.Log("Conectado a " + SqlServer.EXEC_SCALAR("SELECT Valor FROM CONFIGURACION_GLOBAL WHERE Configuracion = 'ubicacion'").ToString());
-			CrearDirectorios();
-
+			
 			int RefrescarCada = 2000;
             try
             {

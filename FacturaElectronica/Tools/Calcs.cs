@@ -16,12 +16,12 @@ namespace FacturaElectronica.Tools
         {
             string codigoNumerico = ConfigurationManager.AppSettings["codigoNumerico"];
             fechaEmision = fechaEmision.Replace("/", "");
+            int count = 2;
+            int suma = 0;
             string clave = fechaEmision + tipoComprobante +
                 ruc + tipoAmbiente + serie + numeroComprobante +
                 codigoNumerico + tipoEmision;
-            int verificador;
-
-            int count = 2, suma = 0;
+            
             for (int i = clave.Length; i > 0; i--)
             {
                 count = count > 7 ? 2 : count;
@@ -29,6 +29,8 @@ namespace FacturaElectronica.Tools
                 count++;
             }
 
+
+            int verificador;
             if (suma == 0 || suma == 1)
                 verificador = 0;
             else

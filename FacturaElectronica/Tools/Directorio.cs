@@ -53,27 +53,6 @@ namespace FacturaElectronica.Tools
             }
         }
 
-        public Resultado Documento(TipoDocumento doc, EstadoDocumento estado)
-        {
-            Resultado resultado = new Resultado();
-            try
-            {
-                if (!Directory.Exists(path + "\\" + folder + "\\" + estado.ToString() + "\\" + doc.ToString()))
-                {
-                    Directory.CreateDirectory(path + "\\" + folder + "\\" + estado.ToString() + "\\" + doc.ToString());
-                }
-                resultado.Estado = true;
-                resultado.Mensaje = path + "\\" + folder + "\\" + estado.ToString() + "\\" + doc.ToString();
-            }
-            catch (Exception ex)
-            {
-                resultado.Estado = false;
-                resultado.Mensaje = ex.Message;
-            }
-            return resultado;
-
-        }
-
         #region Método Disposed
         private Boolean disposed;
         public void Dispose()
