@@ -49,8 +49,8 @@ namespace FacturaElectronica.SRI
     [XmlTypeAttribute(AnonymousType = true)]
     public partial class facturaInfoTributaria
     {
-        public sbyte ambiente { get; set; }
-        public sbyte tipoEmision { get; set; }
+        public int ambiente { get; set; }
+        public int tipoEmision { get; set; }
         public string razonSocial { get; set; }
         public string nombreComercial { get; set; }
         public string ruc { get; set; }

@@ -29,18 +29,25 @@ namespace FacturaElectronica.Clases
                     foreach (DataRow inf in information.Rows)
                     {
                         DocumentoElectronico documento = new DocumentoElectronico();
-                        documento.Tipo = (TipoDocumento)Convert.ToInt32(inf["ambiente"].ToString());
+                        documento.Tipo = TipoDocumento.Factura;
                         documento.Estado = EstadoDocumento.SinFirma;
                         documento.certificado = inf["certificado"].ToString();
                         documento.clave = inf["clave"].ToString();
                         documento.Table = table;
                         documento.Id = Convert.ToInt64(inf["idFactura"].ToString());
 
+                        if (String.IsNullOrEmpty(inf["certificado"].ToString()))
+                            throw new Exception($"No existe el certificado en la base de datos del ruc: ${inf["ruc"].ToString()}");
+                        if (String.IsNullOrEmpty(inf["clave"].ToString()))
+                            throw new Exception($"No existe una clave del certificado en la base de datos del ruc: ${inf["ruc"].ToString()}");
+                        if (String.IsNullOrEmpty(inf["ambiente"].ToString()))
+                            throw new Exception($"No existe un ambiente en la factura: {documento.Nombre}");
+
                         factura fact = new factura();
 
                         fact.infoTributaria = new facturaInfoTributaria()
                         {
-                            ambiente = Convert.ToSByte(inf["ambiente"].ToString()),
+                            ambiente = Convert.ToInt32(inf["ambiente"].ToString()),
                             tipoEmision = 1,
                             //razonSocial = inf["razonSocial"].ToString(),
                             //ruc = inf["ruc"].ToString(),
@@ -58,7 +65,7 @@ namespace FacturaElectronica.Clases
                             secuencial = "000000114",
 
                             dirMatriz = "Portoviejo 02-44 y Tulcán",
-                            regimenMicroempresas = "CONTRIBUYENTE RÉGIMEN MICROEMPRESAS",
+                            //regimenMicroempresas = "CONTRIBUYENTE RÉGIMEN MICROEMPRESAS",
                             agenteRetencion = "0"
                         };
 
@@ -168,7 +175,8 @@ namespace FacturaElectronica.Clases
 
                         //documento.xml = XmlTools.Serialize(fact);
                         // Crear xml sin firma en la carpeta seleccionada
-                        System.IO.File.WriteAllText(pathDestino.Mensaje + documento.Nombre + ".xml", XmlTools.Serialize(fact)); documentos.Add(documento);
+                        System.IO.File.WriteAllText(pathDestino.Mensaje + documento.Nombre + ".xml", XmlTools.Serialize(fact)); 
+                        documentos.Add(documento);
                     }
                 }
 

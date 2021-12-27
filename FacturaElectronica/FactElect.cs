@@ -109,15 +109,17 @@ namespace FacturaElectronica
 				
 				// Crear directorios antes de empezar
 				CrearDirectorios();
-				
-				// Tabla FACTURA
-				ProcesarDocumentos("Id_Factura", "FACTURA", "FACTURA_CONCEPTO");
-				// Tabla FACTURA_BOLETOS
-				ProcesarDocumentos("Id_factura_boleto", "FACTURA_BOLETO", "DETALLE_FACT_BOLETO");
-				// Tabla FACTURA_PARQUEO
-				ProcesarDocumentos("Id_factura_parqueo", "FACTURA_PARQUEO", "DETALLE_FACT_PARQUEO");
-				// Tabla FACTURA_PARQUEO
-				ProcesarDocumentos("Id_factura_parqueo", "FACTURA_PARQUEO", "DETALLE_FACT_PARQUEO");
+
+                // Tabla FACTURA
+                ProcesarDocumentos("Id_Factura", "FACTURA", "FACTURA_CONCEPTO");
+                // Tabla FACTURA_BOLETOS
+                ProcesarDocumentos("Id_factura_boleto", "FACTURA_BOLETO", "DETALLE_FACT_BOLETO");
+                // Tabla FACTURA_PARQUEO
+                ProcesarDocumentos("Id_factura_parqueo", "FACTURA_PARQUEO", "DETALLE_FACT_PARQUEO");
+                // Tabla FACTURA_TICKET
+                ProcesarDocumentos("id_factura_ticket", "FACTURA_TICKET", "DETALLE_FACT_TICKET");
+                // Tabla FACTURA_RECAUDA
+                ProcesarDocumentos("Id_factura_recauda", "FACTURA_RECAUDA", "DETALLE_FACT_RECAUDA");
 			}
 			catch (Exception ex)
 			{
