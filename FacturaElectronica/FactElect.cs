@@ -139,7 +139,10 @@ namespace FacturaElectronica
 			// Cargar documentos
 			documentos = new List<DocumentoElectronico>();
             documentos = Consultas.GetListFacturas(id, table, tableDetalles, directorio);
-			fun.Log($"Se han creado {documentos.Count()} documentos de la tabla {table} para ser firmados");
+			fun.Log($"Se han creado {documentos.Count()} documentos de la tabla {table} para ser firmados.");
+
+            // Test
+            resultado = GenerarPDF.Factura(documentos.FirstOrDefault(), directorio, table);
 
             // Proceso de firmar
             Actividad(EstadoDocumento.SinFirma, table);
@@ -160,7 +163,8 @@ namespace FacturaElectronica
                 if (documento.Estado == EstadoDocumento.SinFirma)
                 {
                     // Traer los datos para firmar y la ubicación
-                    string certificado = resultado.Mensaje + documento.certificado;
+					resultado = directorio.Path(ConfigurationManager.AppSettings["pathP12"]);
+					string certificado = resultado.Mensaje + documento.certificado;
                     string clave = DesencriptarCadena(documento.clave);
 
 					//Revisar si el certificado es correcto.
@@ -168,22 +172,22 @@ namespace FacturaElectronica
 					if (!resultado.Estado) throw new Exception(resultado.Mensaje);
 
                     resultado = Actions.Firmar(documento, certificado, clave, directorio, table);
-                    mensaje = "firma";
+                    mensaje = "firmado";
                 }
                 else if (documento.Estado == EstadoDocumento.Firmado)
                 {
                     resultado = Actions.ValidarSRI(documento, directorio, table);
-                    mensaje = "envío";
+                    mensaje = "envíado al SRI";
                 }
                 else if (documento.Estado == EstadoDocumento.Recibido)
                 {
                     resultado = Actions.ConsultarSRI(documento, directorio, table);
-                    mensaje = "recepción";
+                    mensaje = "recibido del SRI";
                 }
                 else if (documento.Estado == EstadoDocumento.Autorizado)
                 {
                     resultado = GenerarPDF.Factura(documento, directorio, table);
-                    mensaje = "generar pdf";
+                    mensaje = "generado el PDF";
                 }
                 else
                 {
@@ -191,10 +195,10 @@ namespace FacturaElectronica
                     resultado.Mensaje = "Ha ocurrido un error desconocido...";
                 }
 
-                if (!resultado.Estado)
-                    fun.Log($"Error en {mensaje} de documento: {documento.Nombre} => {resultado.Mensaje}");
+				if (!resultado.Estado)
+					fun.Log($"El documento {documento.Nombre} tuvo un error al ser {mensaje}: resultado.Mensaje");
                 else
-                    fun.Log($"Proceso {mensaje} correcta de documento: {documento.Nombre}");
+                    fun.Log($"El documento {documento.Nombre} ha sido {mensaje} correctamente.");
             }
 		}
 

@@ -152,8 +152,6 @@ namespace FacturaElectronica.SRI
     [XmlTypeAttribute(AnonymousType = true)]
     public partial class facturaDetalle
     {
-        [XmlIgnore]
-        private Double pUnit;
         public string codigoPrincipal { get; set; }
         public string codigoAuxiliar { get; set; }
         public string descripcion { get; set; }

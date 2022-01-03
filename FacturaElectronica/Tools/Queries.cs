@@ -32,8 +32,8 @@
                 "INNER JOIN CLIENTE_FINAL cf ON cf.Id_Cliente_Final = f.Codigo_TipoIdCliente " +
                 "INNER JOIN CAJA C ON f.Id_Caja = C.Id_Caja " +
                 // where
-                $"WHERE f.{id} = 1214772"; // Test
-                //"WHERE f.Id_EstadoFE IS NULL AND f.Id_TipoFactura = (SELECT tf.Id_TipoFactura FROM TIPO_FACTURA tf WHERE tf.Codigo = 'FE')";
+                //$"WHERE f.{id} = 1214772"; // Test
+                "WHERE f.Id_EstadoFE IS NULL AND f.Id_TipoFactura = (SELECT tf.Id_TipoFactura FROM TIPO_FACTURA tf WHERE tf.Codigo = 'FE')";
         }
 
         public static string SelectImpuestosGeneric(string id, string table, long idFactura)
@@ -66,10 +66,14 @@
                 $"WHERE det.{id} = {idFactura}";
         }
 
-        internal static string UpdateEstadoFactura(long id, string table, string state)
+        public static string UpdateEstadoFactura()
         {
-            //return $"UPDATE {table} SET Id_EstadoFE = '{state}' WHERE Id_Factura = {id}";
-            return $"UPDATE {table} SET Id_EstadoFE = (SELECT Id_EstadoFE FROM ESTADO_FACTELECTRONICA WHERE Codigo = '{state}') WHERE Id_Factura = {id}";
+            return "UPDATE {0} SET Id_EstadoFE = (SELECT Id_EstadoFE FROM ESTADO_FACTELECTRONICA WHERE Codigo = '{1}') WHERE Id_Factura = {2}";
+        }
+
+        public static string UpdateClaveAcceso()
+        {
+            return "UPDATE {0} SET ClaveAccesoFactElectronica = '{1}' WHERE Id_Factura = {2}";
         }
     }
 }

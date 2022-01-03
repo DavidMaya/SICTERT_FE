@@ -201,7 +201,8 @@ namespace FacturaElectronica.Procesos
                         file.flush();
                         file.close();
 
-                        resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "PPR");
+                        //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "PPR");
+                        resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, "PPR", documento.Id);
                     }
                 }
                 catch (Exception exc)
@@ -259,7 +260,8 @@ namespace FacturaElectronica.Procesos
 
                         if (resp.estado.ToUpper() == "RECIBIDA")
                         {
-                            resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "ENV");
+                            //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "ENV");
+                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, "ENV", documento.Id);
                             documento.Estado = EstadoDocumento.Recibido;
                             resultado.Estado = true;
                             
@@ -270,7 +272,8 @@ namespace FacturaElectronica.Procesos
                         else
                         {
                             //Si tiene algún problema
-                            resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "NEV");
+                            //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "NEV");
+                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, "NEV", documento.Id);
                             documento.Estado = EstadoDocumento.Devuelto;
                             resultado.Estado = false;
                             if (documento.Mensaje == null) documento.Mensaje = "";
@@ -279,7 +282,8 @@ namespace FacturaElectronica.Procesos
                             System.IO.File.Delete(pathDevueltos.Mensaje + documento.Nombre + ".xml");
                             System.IO.File.Move(pathFirmados.Mensaje + documento.Nombre + ".xml",
                                 pathDevueltos.Mensaje + documento.Nombre + ".xml");
-                            resultado.Mensaje = resp.comprobantes.comprobante.mensajes.mensaje.mensaje;
+                            resultado.Mensaje = resp.comprobantes.comprobante.mensajes.mensaje.mensaje + " => " +
+                                resp.comprobantes.comprobante.mensajes.mensaje.informacionAdicional;
                         }
                         
                     }
@@ -365,7 +369,8 @@ namespace FacturaElectronica.Procesos
 
                         if (resp.autorizaciones.FirstOrDefault().estado.Trim(' ') == "AUTORIZADO")
                         {
-                            resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "AUT");
+                            //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "AUT");
+                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, "AUT", documento.Id);
                             //resultado.Estado = true;
                             // Ingresar factura firmada en el formato del SRI cuando es autorizado
                             if (!string.IsNullOrEmpty(estadoAutorizado) && !string.IsNullOrEmpty(documento.ClaveAcceso) && !string.IsNullOrEmpty(fechaAutorizacion))
@@ -412,7 +417,8 @@ namespace FacturaElectronica.Procesos
                             documento.Estado = EstadoDocumento.Rechazado;
                             resultado.Estado = false;
                             System.IO.File.WriteAllText(pathRechazado.Mensaje + documento.Nombre + ".xml", documento.SoapValidar);
-                            resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "NAT");
+                            //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "NAT");
+                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, "NAT", documento.Id);
                         }
                     }
 

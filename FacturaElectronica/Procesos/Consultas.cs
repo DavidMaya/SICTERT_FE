@@ -17,6 +17,7 @@ namespace FacturaElectronica.Clases
             if (pathDestino.Estado)
             {
                 List<DocumentoElectronico> documentos = new List<DocumentoElectronico>();
+                int contadorFactura = 117; //Test
                 ///* 1. Traer los datos de cada factura para elaborar los xml.
                 /// Aquí debe obtener los resultado de la tabla FACTURA habilitados
                 /// y que no tengan el estado NULL.
@@ -62,8 +63,8 @@ namespace FacturaElectronica.Clases
                             ruc = "1891760171001",
                             estab = "001",
                             ptoEmi = "001",
-                            secuencial = "000000114",
-
+                            //secuencial = "000000115",
+                            secuencial = contadorFactura.ToString().PadLeft(9, '0'),
                             dirMatriz = "Portoviejo 02-44 y Tulcán",
                             //regimenMicroempresas = "CONTRIBUYENTE RÉGIMEN MICROEMPRESAS",
                             agenteRetencion = "0"
@@ -77,7 +78,7 @@ namespace FacturaElectronica.Clases
                             obligadoContabilidad = inf["obligadoContabilidad"].ToString(),
                             tipoIdentificacionComprador = "05",
                             razonSocialComprador = inf["razonSocialComprador"].ToString(),
-                            direccionComprador = inf["direccionComprador"].ToString(),
+                            direccionComprador = inf["direccionComprador"].ToString() == "" ? "SIN DIRECCIÓN" : inf["direccionComprador"].ToString(),
                             identificacionComprador = inf["identificacionComprador"].ToString(),
                             totalSinImpuestos = inf["totalSinImpuestos"].ToString().Replace(',', '.'),
                             totalDescuento = "0.00",
@@ -87,7 +88,7 @@ namespace FacturaElectronica.Clases
 
                             // Test
                             moneda = "DOLAR",
-                            fechaEmision = "22/12/2021",
+                            fechaEmision = "28/12/2021",
                             dirEstablecimiento = "Portoviejo 02-44 y Tulcán"
                         };
 
@@ -175,8 +176,10 @@ namespace FacturaElectronica.Clases
 
                         //documento.xml = XmlTools.Serialize(fact);
                         // Crear xml sin firma en la carpeta seleccionada
-                        System.IO.File.WriteAllText(pathDestino.Mensaje + documento.Nombre + ".xml", XmlTools.Serialize(fact)); 
+                        System.IO.File.WriteAllText(pathDestino.Mensaje + documento.Nombre + ".xml", XmlTools.Serialize(fact));
+                        UpdateData(Queries.UpdateClaveAcceso(), table, documento.ClaveAcceso, documento.Id);
                         documentos.Add(documento);
+                        contadorFactura++; //Test
                     }
                 }
 
@@ -187,11 +190,22 @@ namespace FacturaElectronica.Clases
                 throw new Exception("Ha ocurrido un error al crear la carpeta de No Firmados");
         }
 
-        public static Resultado UpdateEstadoFactura(long id, string table, string estado)
+        //public static Resultado UpdateEstadoFactura(long id, string table, string estado)
+        //{
+        //    Resultado resultado = new Resultado();
+
+        //    string sql = Queries.UpdateEstadoFactura(id, table, estado);
+        //    string res = SqlServer.EXEC_COMMAND(sql);
+        //    resultado.Estado = res == "OK";
+        //    resultado.Mensaje = res == "OK" ? SqlServer.MensajeDeActualizar : res;
+
+        //    return resultado;
+        //}
+
+        public static Resultado UpdateData(string query, params object[] args)
         {
             Resultado resultado = new Resultado();
-
-            string sql = Queries.UpdateEstadoFactura(id, table, estado);
+            string sql = String.Format(query, args);
             string res = SqlServer.EXEC_COMMAND(sql);
             resultado.Estado = res == "OK";
             resultado.Mensaje = res == "OK" ? SqlServer.MensajeDeActualizar : res;

@@ -48,9 +48,9 @@ namespace FacturaElectronica.Procesos
                 dirMatriz = (from item in FacturaXML.Descendants("dirMatriz")
                              select item.Value).FirstOrDefault();
                 //infoFactura
-                string fechaEmision, dirEstablecimiento, contribuyenteEspecial, 
+                string fechaEmision, dirEstablecimiento, contribuyenteEspecial,
                     obligadoContabilidad, tipoIdentificacionComprador, razonSocialComprador, 
-                    identificacionComprador, totalSinImpuestos, totalDescuento, codigo, 
+                    identificacionComprador, direccionComprador, totalSinImpuestos, totalDescuento, codigo, 
                     codigoPorcentaje, baseImponible, valor, propina, importeTotal, moneda, formaPago, total;
 
                 fechaEmision = (from item in FacturaXML.Descendants("fechaEmision")
@@ -67,6 +67,8 @@ namespace FacturaElectronica.Procesos
                                         select item.Value).FirstOrDefault();
                 identificacionComprador = (from item in FacturaXML.Descendants("identificacionComprador")
                                            select item.Value).FirstOrDefault();
+                direccionComprador = (from item in FacturaXML.Descendants("direccionComprador")
+                                      select item.Value).FirstOrDefault();
                 totalSinImpuestos = (from item in FacturaXML.Descendants("totalSinImpuestos")
                                      select item.Value).FirstOrDefault();
                 totalDescuento = (from item in FacturaXML.Descendants("totalDescuento")
@@ -214,9 +216,9 @@ namespace FacturaElectronica.Procesos
                         RazonNombre.BorderWidth = 0f;
                         tableR.AddCell(RazonNombre);
 
-                        PdfPCell identificaion = new PdfPCell(new Paragraph("Identificación", FontFactory.GetFont("Arial", 8, Font.BOLD)));
-                        identificaion.BorderWidth = 0f;
-                        tableR.AddCell(identificaion);
+                        PdfPCell identificacion = new PdfPCell(new Paragraph("Identificación", FontFactory.GetFont("Arial", 8, Font.BOLD)));
+                        identificacion.BorderWidth = 0f;
+                        tableR.AddCell(identificacion);
 
                         PdfPCell identificaionNU = new PdfPCell(new Paragraph(identificacionComprador, FontFactory.GetFont("Arial", 8)));
                         identificaionNU.Border = 0;
@@ -230,11 +232,11 @@ namespace FacturaElectronica.Procesos
                         fechaEm.BorderWidth = 0f;
                         tableR.AddCell(fechaEm);
 
-                        PdfPCell Direcion = new PdfPCell(new Paragraph("Dirección :", FontFactory.GetFont("Arial", 8, Font.BOLD)));
-                        Direcion.BorderWidth = 0f;
-                        tableR.AddCell(Direcion);
+                        PdfPCell Direccion = new PdfPCell(new Paragraph("Dirección :", FontFactory.GetFont("Arial", 8, Font.BOLD)));
+                        Direccion.BorderWidth = 0f;
+                        tableR.AddCell(Direccion);
 
-                        PdfPCell DirecionO = new PdfPCell(new Paragraph(dirEstablecimiento, FontFactory.GetFont("Arial", 8)));
+                        PdfPCell DirecionO = new PdfPCell(new Paragraph(direccionComprador, FontFactory.GetFont("Arial", 8)));
                         DirecionO.BorderWidth = 0f;
                         DirecionO.Colspan = 2;
                         tableR.AddCell(DirecionO);
@@ -326,7 +328,7 @@ namespace FacturaElectronica.Procesos
                         tableE.AddCell(DirecionSucursal);
 
 
-                        PdfPCell DirecionSucursal1 = (new PdfPCell(new Paragraph("", FontFactory.GetFont("Arial", 10))));
+                        PdfPCell DirecionSucursal1 = (new PdfPCell(new Paragraph(dirEstablecimiento, FontFactory.GetFont("Arial", 10))));
                         DirecionSucursal1.BorderWidth = 0f;
                         tableE.AddCell(DirecionSucursal1);
 
@@ -859,7 +861,7 @@ namespace FacturaElectronica.Procesos
                         tableHoly.SetWidthPercentage(new float[] { 130 }, PageSize.A4);
 
                         resultado.Estado = true;
-                        System.IO.File.Delete(pathFirmado.Mensaje + documento.Nombre + ".xml");
+                        //System.IO.File.Delete(pathFirmado.Mensaje + documento.Nombre + ".xml");
 
                         doc.Close();
                         fs.Close();
