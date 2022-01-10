@@ -32,7 +32,7 @@ namespace FacturaElectronica.SRI
 
         public factura()
         {
-            version = "1.0.0";
+            version = "1.1.0";
             id = "comprobante";
             infoTributaria = new facturaInfoTributaria();
             infoFactura = new facturaInfoFactura();

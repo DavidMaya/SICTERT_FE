@@ -124,7 +124,7 @@ namespace FacturaElectronica
 			catch (Exception ex)
 			{
 				fun.Log("Error: " + ex.Message);
-				runTim.Stop();
+				runTim.Start();
 			}
 			finally
 			{
@@ -140,9 +140,6 @@ namespace FacturaElectronica
 			documentos = new List<DocumentoElectronico>();
             documentos = Consultas.GetListFacturas(id, table, tableDetalles, directorio);
 			fun.Log($"Se han creado {documentos.Count()} documentos de la tabla {table} para ser firmados.");
-
-            // Test
-            resultado = GenerarPDF.Factura(documentos.FirstOrDefault(), directorio, table);
 
             // Proceso de firmar
             Actividad(EstadoDocumento.SinFirma, table);

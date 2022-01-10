@@ -206,6 +206,12 @@
     <None Include="Web References\wsRecepcionSRI\respuestaSolicitud.datasource">
       <DependentUpon>Reference.map</DependentUpon>
     </None>
+    <None Include="XSD\factura_V1.0.0.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="XSD\factura_V1.1.0.xsd">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="favicon.ico" />
@@ -245,5 +251,6 @@
       <CachedSettingsPropName>SiCtert_FacturaElectrónica_wsRecepcionSRI_RecepcionComprobantesOfflineService</CachedSettingsPropName>
     </WebReferenceUrl>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

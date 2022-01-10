@@ -48,6 +48,7 @@ namespace FacturaElectronica.Procesos
             }
             return resultado;
         }
+
         public static Resultado ProbarCertificado(String certificado, String clave)
         {
             Resultado resultado = new Resultado();
@@ -202,7 +203,7 @@ namespace FacturaElectronica.Procesos
                         file.close();
 
                         //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "PPR");
-                        resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, "PPR", documento.Id);
+                        resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, "FIR", documento.Id);
                     }
                 }
                 catch (Exception exc)
