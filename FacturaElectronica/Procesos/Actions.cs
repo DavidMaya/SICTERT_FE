@@ -340,9 +340,6 @@ namespace FacturaElectronica.Procesos
         Consultar:
             if (pathRecibido.Estado && pathAutorizado.Estado && pathRechazado.Estado)
             {
-                //  string dxml = System.IO.File.ReadAllText(doc.Mensaje + doc.Nombre + ".xml");
-                //string nError = "";
-                //string mError = "";
                 try
                 {
                     using (AutorizacionComprobantesService1 autCompService = new AutorizacionComprobantesService1())
@@ -357,9 +354,6 @@ namespace FacturaElectronica.Procesos
                         mXML = autCompService.XmlResponse;
                         documento.SoapValidar = mXML;
                         var resp = documento.Autorización;
-
-
-                        //XmlNodeList xnList = xml.SelectNodes("/data/Table");
 
                         try
                         {
@@ -410,7 +404,7 @@ namespace FacturaElectronica.Procesos
 
                                 documento.Estado = EstadoDocumento.Autorizado;
                                 resultado.Estado = true;
-                                resultado.Mensaje = $"{estadoAutorizado} en {fechaAutorizacion}";
+                                resultado.Mensaje = fechaAutorizacion;
                             }
                         }
                         else

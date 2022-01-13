@@ -31,6 +31,7 @@ namespace FacturaElectronica
 		public static funciones fun = new funciones(DirectorioTrabajo, path, ArchivoLog);
 		private static Directorio directorio = new Directorio(DirectorioTrabajo, ConfigurationManager.AppSettings["pathDocs"]);
 		Resultado resultado = new Resultado();
+		string codigoIVA = string.Empty;
 
 		List<DocumentoElectronico> documentos = null;
 
@@ -109,9 +110,10 @@ namespace FacturaElectronica
 				
 				// Crear directorios antes de empezar
 				CrearDirectorios();
+				codigoIVA = Consultas.GetCodigoIva();
 
-                // Tabla FACTURA
-                ProcesarDocumentos("Id_Factura", "FACTURA", "FACTURA_CONCEPTO");
+				// Tabla FACTURA
+				ProcesarDocumentos("Id_Factura", "FACTURA", "FACTURA_CONCEPTO");
                 // Tabla FACTURA_BOLETOS
                 ProcesarDocumentos("Id_factura_boleto", "FACTURA_BOLETO", "DETALLE_FACT_BOLETO");
                 // Tabla FACTURA_PARQUEO
@@ -138,7 +140,7 @@ namespace FacturaElectronica
         {
 			// Cargar documentos
 			documentos = new List<DocumentoElectronico>();
-            documentos = Consultas.GetListFacturas(id, table, tableDetalles, directorio);
+            documentos = Consultas.GetListFacturas(id, table, tableDetalles, directorio, codigoIVA, bool.Parse(ConfigurationManager.AppSettings["crearClaveAcceso"]));
 			fun.Log($"Se han creado {documentos.Count()} documentos de la tabla {table} para ser firmados.");
 
             // Proceso de firmar
@@ -154,6 +156,7 @@ namespace FacturaElectronica
 		private void Actividad(EstadoDocumento Estado, string table)
         {
 			resultado = new Resultado();
+
 			foreach (DocumentoElectronico documento in documentos.Where(xx => xx.Estado == Estado))
             {
                 string mensaje = "";
@@ -179,7 +182,7 @@ namespace FacturaElectronica
                 else if (documento.Estado == EstadoDocumento.Recibido)
                 {
                     resultado = Actions.ConsultarSRI(documento, directorio, table);
-                    mensaje = "recibido del SRI";
+                    mensaje = "autorizado por el SRI";
                 }
                 else if (documento.Estado == EstadoDocumento.Autorizado)
                 {

@@ -10,10 +10,14 @@
                 "f.Id_TipoAmbiente AS ambiente, " +
                 "UPPER(f.RazonSocial_Emisor) AS razonSocial, " +
                 "f.RUC_Emisor AS ruc, " +
+                "f.ClaveAccesoFactElectronica AS claveAcceso, " +
+                "(SELECT Codigo FROM TIPO_COMPROBANTE tc WHERE tc.Nombre = 'FACTURA') AS codDoc, " +
                 "f.Serie AS estab, " +
                 "f.CodEstablecimiento_Emisor AS ptoEmi, " +
                 "f.Numero secuencial, " +
                 "UPPER(f.DirMatriz_Emisor) AS dirMatriz," +
+                "(SELECT trt.Leyenda FROM TIPO_REGIMEN_TRIBUTARIO trt WHERE trt.Id_RegimenTributario = c.Id_RegimenTributario) AS regimenMicroempresas, " +
+                "c.ResolAgenteRet AS agenteRetencion, " +
                 // infoFactura
                 "CONVERT(VARCHAR, f.Fecha_Hora, 103) AS fechaEmision, " +
                 "UPPER(f.DirEstablecimiento_Emisor) AS dirEstablecimiento, " +
@@ -24,48 +28,57 @@
                 "f.CI_Ruc AS identificacionComprador, " +
                 "f.Direccion AS direccionComprador, " +
                 "f.Telefono, " +
-                "'' AS Email, " + //Reemplazar cuando corresponda.
-                "CONVERT(DECIMAL(10, 2), (f.Valor + f.ValorBaseIVA)) AS totalSinImpuestos, " +
-                "CONVERT(DECIMAL(10,2), f.Valor_Total) AS importeTotal, " +
-                // infoAdicional
+                "f.Email, " +
+                "CONVERT(DECIMAL(19, 4), (f.Valor + f.ValorBaseIVA)) AS totalSinImpuestos, " +
+                "CONVERT(DECIMAL(19, 4), f.Valor_Total) AS importeTotal, " +
+                // Certificado y datos adicionales
                 "c.CertificadoP12 as certificado, c.ClaveCertificadoP12 as clave, " +
-                "(SELECT '01' FROM TIPO_PAGO tp WHERE tp.Id_Tipo_Pago = p.Id_Tipo_Pago) AS formaPago " + // Reemplazar cuando corresponda
+                "(SELECT tp.Codigo_FormaPago_FE FROM TIPO_PAGO tp WHERE tp.Id_Tipo_Pago = p.Id_Tipo_Pago) AS formaPago " +
                 // table
                 $"FROM {table} f " +
                 "INNER JOIN PAGO p ON f.Id_Factura = p.Id_Factura " +
                 "INNER JOIN CAJA C ON f.Id_Caja = C.Id_Caja " +
-                // where
+                // Filtro de las facturas
                 "WHERE f.Id_EstadoFE IS NULL AND f.Id_TipoFactura = (SELECT tf.Id_TipoFactura FROM TIPO_FACTURA tf WHERE tf.Codigo = 'FE')";
         }
 
         public static string SelectImpuestosGeneric(string id, string table, long idFactura)
         {
+            // totalConImpuestos
             string field = table == "DETALLE_FACT_RECAUDA" ? "Iva_Valor" : "Iva";
-            
             return "SELECT " +
-                $"IIF(det.{field} >= 0, 0, 2) AS codigoPorcentaje, " +
-                "CONVERT(DECIMAL(10, 2), SUM(det.Valor * det.Cantidad)) AS baseImponible, " +
-                $"CONVERT(DECIMAL(10, 2), SUM(det.{field})) AS valor " +
+                $"det.CodigoTarifa_IVA AS codigoPorcentaje, " +
+                "CONVERT(DECIMAL(19, 4), SUM(det.Valor * det.Cantidad)) AS baseImponible, " +
+                "tti.PorcIVA AS tarifa, " +
+                $"CONVERT(DECIMAL(19, 4), SUM(det.{field})) AS valor " +
                 $"FROM {table} det " +
-                $"WHERE det.{id} = {idFactura} " +
-                $"GROUP BY IIF(det.{field} >= 0, 0, 2)";
+                "INNER JOIN TIPO_TARIFA_IVA tti ON det.CodigoTarifa_IVA = tti.CodigoTarifa_IVA " +
+                $"WHERE CONVERT(DECIMAL(19, 4), det.{id}) = {idFactura} " +
+                $"GROUP BY det.CodigoTarifa_IVA, tti.PorcIVA";
         }
 
         public static string SelectDetalleGeneric(string id, string table, long idFactura)
         {
+            // detalles
             string field = table == "DETALLE_FACT_RECAUDA" ? "Iva_Valor" : "Iva";
-
             return "SELECT " +
                 "det.Id_Concepto_Cuenta AS codigoPrincipal, " +
                 "det.Nombre AS descripcion, " +
                 "det.Cantidad AS cantidad, " +
-                "CONVERT(DECIMAL(10, 2), det.Valor) AS precioUnitario, " +
-                $"IIF(det.{field} >= 0, 0, 2) AS codigoPorcentaje, " +
-                $"IIF(det.{field} >= 0, 12, 2) AS tarifa, " +
-                "CONVERT(DECIMAL(10, 2), det.Valor * det.Cantidad) AS precioTotalSinImpuesto, " +
+                "CONVERT(DECIMAL(19, 4), det.Valor) AS precioUnitario, " +
+                $"det.CodigoTarifa_IVA AS codigoPorcentaje, " +
+                $"tti.PorcIVA AS tarifa, " +
+                "CONVERT(DECIMAL(19, 4), det.Valor * det.Cantidad) AS precioTotalSinImpuesto, " +
                 $"det.{field} AS valor " + 
                 $"FROM {table} det " +
+                "INNER JOIN TIPO_TARIFA_IVA tti ON det.CodigoTarifa_IVA = tti.CodigoTarifa_IVA " +
                 $"WHERE det.{id} = {idFactura}";
+        }
+
+        public static string SelectCodigoIva()
+        {
+            // Código IVA que va en todos los detalles: Tabla 16
+            return "SELECT Codigo_ImpuestoIVA FROM CODIGO_IMPUESTO WHERE Impuesto = 'IVA'";
         }
 
         public static string UpdateEstadoFactura()

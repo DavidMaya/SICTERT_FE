@@ -23,12 +23,12 @@ namespace FacturaElectronica.Documento
         {
             get
             {
-                //return Tipo.ToString() + Id.ToString().PadLeft(5, '0');
-                return $"{Table}_{Id.ToString().PadLeft(15, '0')}";
+                return $"{Table}_{Id.ToString().PadLeft(19, '0')}";
             }
         }
         [XmlIgnore]
         public string ClaveAcceso { get; set; }
+        public string LogoEmpresa { get; set; }
 
         [XmlIgnore]
         public string SecuencialDocumento

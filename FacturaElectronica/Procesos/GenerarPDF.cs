@@ -12,16 +12,25 @@ namespace FacturaElectronica.Procesos
 {
     public static class GenerarPDF
     {
-        public static Resultado Factura(DocumentoElectronico documento, Directorio directorio, string table, string pathImage = null)
+        public static Resultado Factura(DocumentoElectronico documento, Directorio directorio, string table)
         {
             Resultado resultado = new Resultado();
             Resultado pathFirmado = directorio.Path(EstadoDocumento.Firmado);
+            Resultado pathAutorizado = directorio.Path(EstadoDocumento.Autorizado);
             Resultado pathPDF = directorio.Path(EstadoDocumento.Pdf);
+            Resultado pathLogo = directorio.Path(System.Configuration.ConfigurationManager.AppSettings["pathP12"]);
 
-            if (pathFirmado.Estado && pathPDF.Estado)
+            if (pathFirmado.Estado && pathPDF.Estado && pathAutorizado.Estado)
             {
                 XDocument FacturaXML = XDocument.Load(pathFirmado.Mensaje + documento.Nombre + ".xml");
-                byte[] imagenStream = System.IO.File.ReadAllBytes("C:\\DocumentosElectronicos\\a.jpg");
+                XDocument FacturaAuth = XDocument.Load(pathAutorizado.Mensaje + documento.Nombre + ".xml");
+
+                string fechaEmision = (from item in FacturaAuth.Descendants("fechaAutorizacion")
+                                       select item.Value).FirstOrDefault();
+                fechaEmision = DateTime.Parse(fechaEmision).ToString("dd/MM/yyyy hh:mm:ss");
+                FacturaAuth = null;
+
+                byte[] imagenStream = System.IO.File.ReadAllBytes(pathLogo.Mensaje + documento.LogoEmpresa);
                 Stream rutaImagen = new MemoryStream(imagenStream);
 
                 string ambiente, tipoEmision, razonSocial, nombreComercial, ruc, claveAccesoXML, codDoc, estab, ptoEmi, secuencial, dirMatriz;
@@ -48,13 +57,13 @@ namespace FacturaElectronica.Procesos
                 dirMatriz = (from item in FacturaXML.Descendants("dirMatriz")
                              select item.Value).FirstOrDefault();
                 //infoFactura
-                string fechaEmision, dirEstablecimiento, contribuyenteEspecial,
+                string dirEstablecimiento, contribuyenteEspecial,
                     obligadoContabilidad, tipoIdentificacionComprador, razonSocialComprador, 
                     identificacionComprador, direccionComprador, totalSinImpuestos, totalDescuento, codigo, 
                     codigoPorcentaje, baseImponible, valor, propina, importeTotal, moneda, formaPago, total;
 
-                fechaEmision = (from item in FacturaXML.Descendants("fechaEmision")
-                                select item.Value).FirstOrDefault();
+                //fechaEmision = (from item in FacturaXML.Descendants("fechaEmision")
+                //                select item.Value).FirstOrDefault();
                 dirEstablecimiento = (from item in FacturaXML.Descendants("dirEstablecimiento")
                                       select item.Value).FirstOrDefault();
                 obligadoContabilidad = (from item in FacturaXML.Descendants("obligadoContabilidad")
