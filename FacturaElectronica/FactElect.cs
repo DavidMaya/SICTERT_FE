@@ -112,16 +112,25 @@ namespace FacturaElectronica
 				CrearDirectorios();
 				codigoIVA = Consultas.GetCodigoIva();
 
+				DocumentoElectronico doc = new DocumentoElectronico
+				{
+					Id = 1254164,
+					Table = "FACTURA",
+					LogoEmpresa = "logo.png"
+				};
+				resultado = GenerarPDF.Factura(doc, directorio, "FACTURA");
+
+
 				// Tabla FACTURA
-				ProcesarDocumentos("Id_Factura", "FACTURA", "FACTURA_CONCEPTO");
+				ProcesarDocumentos("Id_Factura", "FACTURA", "FACTURA_CONCEPTO", "PAGO");
                 // Tabla FACTURA_BOLETOS
-                ProcesarDocumentos("Id_factura_boleto", "FACTURA_BOLETO", "DETALLE_FACT_BOLETO");
+                ProcesarDocumentos("Id_factura_boleto", "FACTURA_BOLETO", "DETALLE_FACT_BOLETO", "PAGO_BOLETO");
                 // Tabla FACTURA_PARQUEO
-                ProcesarDocumentos("Id_factura_parqueo", "FACTURA_PARQUEO", "DETALLE_FACT_PARQUEO");
+                ProcesarDocumentos("Id_factura_parqueo", "FACTURA_PARQUEO", "DETALLE_FACT_PARQUEO", "PAGO_PARQUEO");
                 // Tabla FACTURA_TICKET
-                ProcesarDocumentos("id_factura_ticket", "FACTURA_TICKET", "DETALLE_FACT_TICKET");
+                ProcesarDocumentos("id_factura_ticket", "FACTURA_TICKET", "DETALLE_FACT_TICKET", "PAGO_TICKET");
                 // Tabla FACTURA_RECAUDA
-                ProcesarDocumentos("Id_factura_recauda", "FACTURA_RECAUDA", "DETALLE_FACT_RECAUDA");
+                ProcesarDocumentos("Id_factura_recauda", "FACTURA_RECAUDA", "DETALLE_FACT_RECAUDA", "PAGO_RECAUDA");
 			}
 			catch (Exception ex)
 			{
@@ -136,11 +145,12 @@ namespace FacturaElectronica
 			}
 		}
 
-        private void ProcesarDocumentos(string id, string table, string tableDetalles)
+        private void ProcesarDocumentos(string id, string table, string tableDetalles, string tablePago)
         {
 			// Cargar documentos
 			documentos = new List<DocumentoElectronico>();
-            documentos = Consultas.GetListFacturas(id, table, tableDetalles, directorio, codigoIVA, bool.Parse(ConfigurationManager.AppSettings["crearClaveAcceso"]));
+            documentos = Consultas.GetListFacturas(
+				id, table, tableDetalles, tablePago, directorio, codigoIVA, bool.Parse(ConfigurationManager.AppSettings["crearClaveAcceso"]));
 			fun.Log($"Se han creado {documentos.Count()} documentos de la tabla {table} para ser firmados.");
 
             // Proceso de firmar

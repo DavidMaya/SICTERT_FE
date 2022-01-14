@@ -15,7 +15,7 @@ namespace FacturaElectronica.Clases
     {
 
         public static List<DocumentoElectronico> GetListFacturas(
-            string id, string table, string tableDetalle, Directorio directorio, string codigoIva, bool crearClaveAcceso)
+            string id, string table, string tableDetalle, string tablePago, Directorio directorio, string codigoIva, bool crearClaveAcceso)
         {
             Resultado result = new Resultado();
             Resultado pathDestino = directorio.Path(EstadoDocumento.SinFirma);
@@ -23,7 +23,7 @@ namespace FacturaElectronica.Clases
             if (pathDestino.Estado)
             {
                 List<DocumentoElectronico> documentos = new List<DocumentoElectronico>();
-                string sqlInformation = Queries.SelectFacturaGeneric(id, table);
+                string sqlInformation = Queries.SelectFacturaGeneric(id, table, tablePago);
 
                 using (DataTable information = SqlServer.EXEC_SELECT(sqlInformation))
                 {
@@ -49,32 +49,12 @@ namespace FacturaElectronica.Clases
 
                         factura fact = new factura();
 
-                        // Si el parámetro de crear Clave de Acceso está habilitado
-                        string claveAcceso = string.Empty;
-                        if (crearClaveAcceso)
-                        {
-                            fact.infoTributaria.claveAcceso = Calcs.GetClaveAcceso(
-                            fact.infoFactura.fechaEmision,
-                            fact.infoTributaria.codDoc,
-                            fact.infoTributaria.ruc,
-                            fact.infoTributaria.ambiente.ToString(),
-                            fact.infoTributaria.estab + fact.infoTributaria.ptoEmi,
-                            fact.infoTributaria.secuencial,
-                            fact.infoTributaria.tipoEmision.ToString());
-
-                            claveAcceso = fact.infoTributaria.claveAcceso;
-                            UpdateData(Queries.UpdateClaveAcceso(), table, documento.ClaveAcceso, documento.Id);
-                        }
-                        else
-                            claveAcceso = inf["claveAcceso"].ToString();
-
                         fact.infoTributaria = new facturaInfoTributaria()
                         {
                             ambiente = Convert.ToInt32(inf["ambiente"].ToString()),
                             tipoEmision = 1, // Tabla 2
                             razonSocial = inf["razonSocial"].ToString(),
                             ruc = inf["ruc"].ToString(),
-                            claveAcceso = claveAcceso,
                             codDoc = inf["codDoc"].ToString(), // Tabla 3
                             estab = inf["estab"].ToString(),
                             ptoEmi = inf["ptoEmi"].ToString(),
@@ -98,12 +78,31 @@ namespace FacturaElectronica.Clases
                             direccionComprador = inf["direccionComprador"].ToString() == "" ? "SIN DIRECCIÓN" : inf["direccionComprador"].ToString(),
                             identificacionComprador = inf["identificacionComprador"].ToString(),
                             totalSinImpuestos = inf["totalSinImpuestos"].ToString().Replace(',', '.'),
-                            totalDescuento = "0.00",
+                            totalDescuento = "0.0000",
                             totalConImpuestos = new List<facturaInfoFacturaTotalImpuesto>(),
-                            propina = "0.00",
+                            propina = "0.0000",
                             importeTotal = inf["importeTotal"].ToString().Replace(',', '.'),
                             moneda = "DOLAR",
                         };
+
+                        // Si el parámetro de crear Clave de Acceso está habilitado
+                        if (crearClaveAcceso)
+                        {
+                            fact.infoTributaria.claveAcceso = Calcs.GetClaveAcceso(
+                            fact.infoFactura.fechaEmision,
+                            fact.infoTributaria.codDoc,
+                            fact.infoTributaria.ruc,
+                            fact.infoTributaria.ambiente.ToString(),
+                            fact.infoTributaria.estab + fact.infoTributaria.ptoEmi,
+                            fact.infoTributaria.secuencial,
+                            fact.infoTributaria.tipoEmision.ToString());
+
+                            fact.infoTributaria.claveAcceso = fact.infoTributaria.claveAcceso;
+                        }
+                        else
+                            fact.infoTributaria.claveAcceso = inf["claveAcceso"].ToString();
+                        
+                        documento.ClaveAcceso = fact.infoTributaria.claveAcceso;
 
                         //Crear Total con impuestos
                         // Permite traer la sumatoria de valores separados por tipo de impuesto.
@@ -145,7 +144,7 @@ namespace FacturaElectronica.Clases
                                 facturaDetalle.descripcion = detalle["descripcion"].ToString();
                                 facturaDetalle.cantidad = detalle["cantidad"].ToString().Replace(',', '.');
                                 facturaDetalle.precioUnitario = detalle["precioUnitario"].ToString().Replace(',', '.');
-                                facturaDetalle.descuento = "0";
+                                facturaDetalle.descuento = "0.0000";
                                 facturaDetalle.precioTotalSinImpuesto = detalle["precioTotalSinImpuesto"].ToString().Replace(',', '.');
                                 facturaDetalle.impuestos = new facturaDetalleImpuestos();
                                 facturaDetalle.impuestos.impuesto = new facturaDetalleImpuestosImpuesto();
@@ -166,7 +165,7 @@ namespace FacturaElectronica.Clases
                         fact.infoAdicional.Add(new facturaCampoAdicional()
                         {
                             nombre = "Teléfono",
-                            Value = inf["Telefono"].ToString()
+                            Value = string.IsNullOrEmpty(inf["Telefono"].ToString()) ? "0000000000" : inf["Telefono"].ToString()
                         });
                         fact.infoAdicional.Add(new facturaCampoAdicional()
                         {
@@ -174,14 +173,16 @@ namespace FacturaElectronica.Clases
                             Value = inf["Email"].ToString() == "" ? "example@email.com" : inf["Email"].ToString()
                         });
 
-                                        
-
                         // Crear xml sin firma en la carpeta seleccionada
                         System.IO.File.WriteAllText(pathDestino.Mensaje + documento.Nombre + ".xml", XmlTools.Serialize(fact));
                         result = ValidateSchema(directorio, documento.Nombre);
                         if (!result.Estado)
                             throw new Exception($"Ha ocurrido un problema al validar el xml: {result.Mensaje}");
 
+                        if (crearClaveAcceso)
+                            UpdateData(Queries.UpdateClaveAcceso(), table, documento.ClaveAcceso, documento.Id);
+
+                        documento.LogoEmpresa = inf["LogoEmpresa"].ToString();
                         documentos.Add(documento);
                     }
                 }

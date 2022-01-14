@@ -2,7 +2,7 @@
 {
     public static class Queries
     {
-        public static string SelectFacturaGeneric(string id, string table)
+        public static string SelectFacturaGeneric(string id, string table, string table_pago)
         {
             return "SELECT " +
                 // infoTributaria
@@ -33,13 +33,15 @@
                 "CONVERT(DECIMAL(19, 4), f.Valor_Total) AS importeTotal, " +
                 // Certificado y datos adicionales
                 "c.CertificadoP12 as certificado, c.ClaveCertificadoP12 as clave, " +
+                "c.LogoRIDE AS LogoEmpresa, " +
                 "(SELECT tp.Codigo_FormaPago_FE FROM TIPO_PAGO tp WHERE tp.Id_Tipo_Pago = p.Id_Tipo_Pago) AS formaPago " +
                 // table
                 $"FROM {table} f " +
-                "INNER JOIN PAGO p ON f.Id_Factura = p.Id_Factura " +
-                "INNER JOIN CAJA C ON f.Id_Caja = C.Id_Caja " +
+                $"INNER JOIN PAGO p ON f.{id} = p.{id} " +
+                "INNER JOIN CAJA c ON f.Id_Caja = c.Id_Caja " +
                 // Filtro de las facturas
-                "WHERE f.Id_EstadoFE IS NULL AND f.Id_TipoFactura = (SELECT tf.Id_TipoFactura FROM TIPO_FACTURA tf WHERE tf.Codigo = 'FE')";
+                "WHERE f.Id_EstadoFE IS NULL AND f.Id_TipoFactura = (SELECT tf.Id_TipoFactura FROM TIPO_FACTURA tf WHERE tf.Codigo = 'FE') " +
+                "ORDER BY f.Fecha_Hora";
         }
 
         public static string SelectImpuestosGeneric(string id, string table, long idFactura)
@@ -48,7 +50,7 @@
             string field = table == "DETALLE_FACT_RECAUDA" ? "Iva_Valor" : "Iva";
             return "SELECT " +
                 $"det.CodigoTarifa_IVA AS codigoPorcentaje, " +
-                "CONVERT(DECIMAL(19, 4), SUM(det.Valor * det.Cantidad)) AS baseImponible, " +
+                "CONVERT(DECIMAL(19, 4), SUM(det.Valor)) AS baseImponible, " +
                 "tti.PorcIVA AS tarifa, " +
                 $"CONVERT(DECIMAL(19, 4), SUM(det.{field})) AS valor " +
                 $"FROM {table} det " +
