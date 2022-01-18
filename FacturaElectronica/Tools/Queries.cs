@@ -9,6 +9,7 @@
                 $"f.{id} AS idFactura, " +
                 "f.Id_TipoAmbiente AS ambiente, " +
                 "UPPER(f.RazonSocial_Emisor) AS razonSocial, " +
+                "f.NombreComercial_Emisor AS nombreComercial, " +
                 "f.RUC_Emisor AS ruc, " +
                 "f.ClaveAccesoFactElectronica AS claveAcceso, " +
                 "(SELECT Codigo FROM TIPO_COMPROBANTE tc WHERE tc.Nombre = 'FACTURA') AS codDoc, " +
@@ -29,15 +30,15 @@
                 "f.Direccion AS direccionComprador, " +
                 "f.Telefono, " +
                 "f.Email, " +
-                "CONVERT(DECIMAL(19, 4), (f.Valor + f.ValorBaseIVA)) AS totalSinImpuestos, " +
-                "CONVERT(DECIMAL(19, 4), f.Valor_Total) AS importeTotal, " +
+                "CONVERT(DECIMAL(19, 2), (f.Valor + f.ValorBaseIVA)) AS totalSinImpuestos, " +
+                "CONVERT(DECIMAL(19, 2), f.Valor_Total) AS importeTotal, " +
                 // Certificado y datos adicionales
                 "c.CertificadoP12 as certificado, c.ClaveCertificadoP12 as clave, " +
                 "c.LogoRIDE AS LogoEmpresa, " +
                 "(SELECT tp.Codigo_FormaPago_FE FROM TIPO_PAGO tp WHERE tp.Id_Tipo_Pago = p.Id_Tipo_Pago) AS formaPago " +
                 // table
                 $"FROM {table} f " +
-                $"INNER JOIN PAGO p ON f.{id} = p.{id} " +
+                $"INNER JOIN {table_pago} p ON f.{id} = p.{id} " +
                 "INNER JOIN CAJA c ON f.Id_Caja = c.Id_Caja " +
                 // Filtro de las facturas
                 "WHERE f.Id_EstadoFE IS NULL AND f.Id_TipoFactura = (SELECT tf.Id_TipoFactura FROM TIPO_FACTURA tf WHERE tf.Codigo = 'FE') " +
@@ -50,12 +51,12 @@
             string field = table == "DETALLE_FACT_RECAUDA" ? "Iva_Valor" : "Iva";
             return "SELECT " +
                 $"det.CodigoTarifa_IVA AS codigoPorcentaje, " +
-                "CONVERT(DECIMAL(19, 4), SUM(det.Valor)) AS baseImponible, " +
+                "CONVERT(DECIMAL(19, 2), SUM(det.Valor) * SUM(det.Cantidad)) AS baseImponible, " +
                 "tti.PorcIVA AS tarifa, " +
-                $"CONVERT(DECIMAL(19, 4), SUM(det.{field})) AS valor " +
+                $"CONVERT(DECIMAL(19, 2), SUM(det.Iva) * SUM(det.Cantidad)) AS valor " +
                 $"FROM {table} det " +
                 "INNER JOIN TIPO_TARIFA_IVA tti ON det.CodigoTarifa_IVA = tti.CodigoTarifa_IVA " +
-                $"WHERE CONVERT(DECIMAL(19, 4), det.{id}) = {idFactura} " +
+                $"WHERE det.{id} = {idFactura} " +
                 $"GROUP BY det.CodigoTarifa_IVA, tti.PorcIVA";
         }
 
@@ -70,8 +71,8 @@
                 "CONVERT(DECIMAL(19, 4), det.Valor) AS precioUnitario, " +
                 $"det.CodigoTarifa_IVA AS codigoPorcentaje, " +
                 $"tti.PorcIVA AS tarifa, " +
-                "CONVERT(DECIMAL(19, 4), det.Valor * det.Cantidad) AS precioTotalSinImpuesto, " +
-                $"det.{field} AS valor " + 
+                "CONVERT(DECIMAL(19, 2), det.Valor * det.Cantidad) AS precioTotalSinImpuesto, " +
+                $"CONVERT(DECIMAL(19, 2), det.{field} * det.Cantidad) AS valor " + 
                 $"FROM {table} det " +
                 "INNER JOIN TIPO_TARIFA_IVA tti ON det.CodigoTarifa_IVA = tti.CodigoTarifa_IVA " +
                 $"WHERE det.{id} = {idFactura}";
@@ -85,7 +86,8 @@
 
         public static string UpdateEstadoFactura()
         {
-            return "UPDATE {0} SET Id_EstadoFE = (SELECT Id_EstadoFE FROM ESTADO_FACTELECTRONICA WHERE Codigo = '{1}') WHERE Id_Factura = {2}";
+            //return "UPDATE {0} SET Id_EstadoFE = (SELECT Id_EstadoFE FROM ESTADO_FACTELECTRONICA WHERE Codigo = '{1}') WHERE {2} = {3}";
+            return "UPDATE {0} SET Id_EstadoFE = (SELECT Id_EstadoFE FROM ESTADO_FACTELECTRONICA WHERE Codigo = '{2}') WHERE {1} = {3}";
         }
 
         public static string UpdateClaveAcceso()

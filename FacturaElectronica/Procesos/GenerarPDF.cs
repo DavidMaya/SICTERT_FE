@@ -30,7 +30,10 @@ namespace FacturaElectronica.Procesos
                 fechaEmision = DateTime.Parse(fechaEmision).ToString("dd/MM/yyyy hh:mm:ss");
                 FacturaAuth = null;
 
-                byte[] imagenStream = System.IO.File.ReadAllBytes(pathLogo.Mensaje + documento.LogoEmpresa);
+                if (string.IsNullOrEmpty(documento.LogoEmpresa.Trim()))
+                    documento.LogoEmpresa = "SIN_LOGO.png";
+
+                byte[] imagenStream = File.ReadAllBytes(pathLogo.Mensaje + documento.LogoEmpresa);
                 Stream rutaImagen = new MemoryStream(imagenStream);
 
                 string ambiente, tipoEmision, razonSocial, nombreComercial, ruc, claveAccesoXML, codDoc, estab, ptoEmi, secuencial, dirMatriz;
@@ -58,12 +61,35 @@ namespace FacturaElectronica.Procesos
                              select item.Value).FirstOrDefault();
                 //infoFactura
                 string dirEstablecimiento, contribuyenteEspecial,
-                    obligadoContabilidad, tipoIdentificacionComprador, razonSocialComprador, 
-                    identificacionComprador, direccionComprador, totalSinImpuestos, totalDescuento, codigo, 
+                    obligadoContabilidad, tipoIdentificacionComprador, razonSocialComprador,
+                    identificacionComprador, direccionComprador, totalSinImpuestos, totalDescuento, codigo,
                     codigoPorcentaje, baseImponible, valor, propina, importeTotal, moneda, formaPago, total;
 
-                //fechaEmision = (from item in FacturaXML.Descendants("fechaEmision")
-                //                select item.Value).FirstOrDefault();
+                string _baseImponible = "0.00";
+                string _baseImponibleIva = "0.00";
+                string _codigoPorcentaje = "0";
+                string _codigoPorcentajeIva = "0.00";
+                string _iva = "0.00";
+
+                foreach (XElement xmlTotalImpuesto in FacturaXML.Descendants("totalImpuesto"))
+                {
+                    if (xmlTotalImpuesto.ToString().Contains("codigoPorcentaje"))
+                    {
+                        if (xmlTotalImpuesto.Element("codigoPorcentaje").Value == "0")
+                        {
+                            //Valores sin IVA
+                            _codigoPorcentaje = "0";
+                            _baseImponible = xmlTotalImpuesto.Element("baseImponible").Value;
+                        } 
+                        else if(xmlTotalImpuesto.Element("codigoPorcentaje").Value == "2")
+                        {
+                            _codigoPorcentajeIva = "2";
+                            _baseImponibleIva = xmlTotalImpuesto.Element("baseImponible").Value;
+                            _iva = xmlTotalImpuesto.Element("valor").Value;
+                        }
+                    }
+                }
+
                 dirEstablecimiento = (from item in FacturaXML.Descendants("dirEstablecimiento")
                                       select item.Value).FirstOrDefault();
                 obligadoContabilidad = (from item in FacturaXML.Descendants("obligadoContabilidad")
@@ -337,7 +363,7 @@ namespace FacturaElectronica.Procesos
                         tableE.AddCell(DirecionSucursal);
 
 
-                        PdfPCell DirecionSucursal1 = (new PdfPCell(new Paragraph(dirEstablecimiento, FontFactory.GetFont("Arial", 10))));
+                        PdfPCell DirecionSucursal1 = (new PdfPCell(new Paragraph(dirEstablecimiento, FontFactory.GetFont("Arial", 8))));
                         DirecionSucursal1.BorderWidth = 0f;
                         tableE.AddCell(DirecionSucursal1);
 
@@ -581,9 +607,9 @@ namespace FacturaElectronica.Procesos
                             PdfPCell subtotal = (new PdfPCell(new Paragraph("SUBTOTAL 14%", FontFactory.GetFont("Arial", 8, Font.BOLD))));
                             tableV.AddCell(subtotal);
 
-                            if (codigoPorcentaje != "2")
+                            if (_codigoPorcentajeIva != "2")
                             {
-                                PdfPCell valorsub = (new PdfPCell(new Paragraph(baseImponible, FontFactory.GetFont("Arial", 8))));
+                                PdfPCell valorsub = (new PdfPCell(new Paragraph(_baseImponibleIva, FontFactory.GetFont("Arial", 8))));
                                 valorsub.HorizontalAlignment = Element.ALIGN_RIGHT;
                                 tableV.AddCell(valorsub);
 
@@ -600,9 +626,9 @@ namespace FacturaElectronica.Procesos
                         {
                             PdfPCell subtotal = (new PdfPCell(new Paragraph("SUBTOTAL 12%", FontFactory.GetFont("Arial", 8, Font.BOLD))));
                             tableV.AddCell(subtotal);
-                            if (codigoPorcentaje == "2")
+                            if (_codigoPorcentajeIva == "2")
                             {
-                                PdfPCell valorsub = (new PdfPCell(new Paragraph(baseImponible, FontFactory.GetFont("Arial", 8))));
+                                PdfPCell valorsub = (new PdfPCell(new Paragraph(_baseImponibleIva, FontFactory.GetFont("Arial", 8))));
                                 valorsub.HorizontalAlignment = Element.ALIGN_RIGHT;
                                 tableV.AddCell(valorsub);
                             }
@@ -621,14 +647,14 @@ namespace FacturaElectronica.Procesos
                             tableV.AddCell(valorsub);
                         }
 
-                        PdfPCell subtotalIva = (new PdfPCell(new Paragraph("SUBTOTAL IVA 0%", FontFactory.GetFont("Arial", 8, Font.BOLD))));
+                        PdfPCell subtotalIva = (new PdfPCell(new Paragraph("SUBTOTAL 0%", FontFactory.GetFont("Arial", 8, Font.BOLD))));
                         tableV.AddCell(subtotalIva);
 
 
 
-                        if (codigoPorcentaje == "0")
+                        if (_codigoPorcentaje == "0")
                         {
-                            PdfPCell valoriva0 = (new PdfPCell(new Paragraph(baseImponible, FontFactory.GetFont("Arial", 8))));
+                            PdfPCell valoriva0 = (new PdfPCell(new Paragraph(_baseImponible, FontFactory.GetFont("Arial", 8))));
                             valoriva0.HorizontalAlignment = Element.ALIGN_RIGHT;
                             tableV.AddCell(valoriva0);
                         }
@@ -655,7 +681,7 @@ namespace FacturaElectronica.Procesos
 
                         PdfPCell subtotalSI = (new PdfPCell(new Paragraph("SUBTOTAL SIN IMPUESTOS", FontFactory.GetFont("Arial", 8))));
                         tableV.AddCell(subtotalSI);
-                        PdfPCell subtotalSI1 = (new PdfPCell(new Paragraph(baseImponible, FontFactory.GetFont("Arial", 8))));
+                        PdfPCell subtotalSI1 = (new PdfPCell(new Paragraph(totalSinImpuestos, FontFactory.GetFont("Arial", 8))));
                         subtotalSI1.HorizontalAlignment = Element.ALIGN_RIGHT;
                         tableV.AddCell(subtotalSI1);
 
@@ -677,10 +703,10 @@ namespace FacturaElectronica.Procesos
                         {
                             PdfPCell iva14 = (new PdfPCell(new Paragraph("IVA 14%", FontFactory.GetFont("Arial", 8))));
                             tableV.AddCell(iva14);
-                            if (codigoPorcentaje != "2")
+                            if (_codigoPorcentajeIva != "2")
                             {
 
-                                PdfPCell iva141 = (new PdfPCell(new Paragraph(valor, FontFactory.GetFont("Arial", 8))));
+                                PdfPCell iva141 = (new PdfPCell(new Paragraph(_iva, FontFactory.GetFont("Arial", 8))));
                                 iva141.HorizontalAlignment = Element.ALIGN_RIGHT;
                                 tableV.AddCell(iva141);
 
@@ -688,7 +714,7 @@ namespace FacturaElectronica.Procesos
                             else
                             {
 
-                                PdfPCell iva141 = (new PdfPCell(new Paragraph(valor, FontFactory.GetFont("Arial", 8))));
+                                PdfPCell iva141 = (new PdfPCell(new Paragraph(_iva, FontFactory.GetFont("Arial", 8))));
                                 iva141.HorizontalAlignment = Element.ALIGN_RIGHT;
                                 tableV.AddCell(iva141);
 
@@ -699,26 +725,26 @@ namespace FacturaElectronica.Procesos
 
                             PdfPCell iva14 = (new PdfPCell(new Paragraph("IVA 12%", FontFactory.GetFont("Arial", 8))));
                             tableV.AddCell(iva14);
-                            if (codigoPorcentaje != "2")
+                            if (_codigoPorcentajeIva != "2")
                             {
 
-                                PdfPCell iva141 = (new PdfPCell(new Paragraph(valor, FontFactory.GetFont("Arial", 8))));
+                                PdfPCell iva141 = (new PdfPCell(new Paragraph(_iva, FontFactory.GetFont("Arial", 8))));
                                 iva141.HorizontalAlignment = Element.ALIGN_RIGHT;
                                 tableV.AddCell(iva141);
 
                             }
-                            else if (codigoPorcentaje == "2")
+                            else if (_codigoPorcentajeIva == "2")
                             {
-                                if (codigoPorcentaje == "2")
+                                if (_codigoPorcentajeIva == "2")
                                 {
-                                    PdfPCell iva141 = (new PdfPCell(new Paragraph(valor, FontFactory.GetFont("Arial", 8))));
+                                    PdfPCell iva141 = (new PdfPCell(new Paragraph(_iva, FontFactory.GetFont("Arial", 8))));
                                     iva141.HorizontalAlignment = Element.ALIGN_RIGHT;
                                     tableV.AddCell(iva141);
                                 }
                                 else
                                 {
 
-                                    PdfPCell iva141 = (new PdfPCell(new Paragraph(valor, FontFactory.GetFont("Arial", 8))));
+                                    PdfPCell iva141 = (new PdfPCell(new Paragraph(_iva, FontFactory.GetFont("Arial", 8))));
                                     iva141.HorizontalAlignment = Element.ALIGN_RIGHT;
                                     tableV.AddCell(iva141);
 
@@ -727,7 +753,7 @@ namespace FacturaElectronica.Procesos
                             else
                             {
 
-                                PdfPCell iva141 = (new PdfPCell(new Paragraph(valor, FontFactory.GetFont("Arial", 8))));
+                                PdfPCell iva141 = (new PdfPCell(new Paragraph(_iva, FontFactory.GetFont("Arial", 8))));
                                 iva141.HorizontalAlignment = Element.ALIGN_RIGHT;
                                 tableV.AddCell(iva141);
                             }

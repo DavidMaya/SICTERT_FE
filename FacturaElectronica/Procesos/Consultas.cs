@@ -39,9 +39,9 @@ namespace FacturaElectronica.Clases
                         documento.Id = Convert.ToInt64(inf["idFactura"].ToString());
 
                         if (String.IsNullOrEmpty(inf["certificado"].ToString()))
-                            throw new Exception($"No existe el certificado en la base de datos del ruc: ${inf["ruc"]}");
+                            throw new Exception($"No existe el certificado en la base de datos del ruc: {inf["ruc"]}");
                         if (String.IsNullOrEmpty(inf["clave"].ToString()))
-                            throw new Exception($"No existe una clave del certificado en la base de datos del ruc: ${inf["ruc"]}");
+                            throw new Exception($"No existe una clave del certificado en la base de datos del ruc: {inf["ruc"]}");
                         if (String.IsNullOrEmpty(inf["ambiente"].ToString()))
                             throw new Exception($"No existe un ambiente en la factura: {documento.Nombre}");
                         if (string.IsNullOrEmpty(inf["claveAcceso"].ToString()) && !crearClaveAcceso)
@@ -54,6 +54,7 @@ namespace FacturaElectronica.Clases
                             ambiente = Convert.ToInt32(inf["ambiente"].ToString()),
                             tipoEmision = 1, // Tabla 2
                             razonSocial = inf["razonSocial"].ToString(),
+                            nombreComercial = inf["nombreComercial"].ToString(),
                             ruc = inf["ruc"].ToString(),
                             codDoc = inf["codDoc"].ToString(), // Tabla 3
                             estab = inf["estab"].ToString(),
@@ -175,12 +176,14 @@ namespace FacturaElectronica.Clases
 
                         // Crear xml sin firma en la carpeta seleccionada
                         System.IO.File.WriteAllText(pathDestino.Mensaje + documento.Nombre + ".xml", XmlTools.Serialize(fact));
+
+                        //Validar con el esquema
                         result = ValidateSchema(directorio, documento.Nombre);
                         if (!result.Estado)
                             throw new Exception($"Ha ocurrido un problema al validar el xml: {result.Mensaje}");
 
                         if (crearClaveAcceso)
-                            UpdateData(Queries.UpdateClaveAcceso(), table, documento.ClaveAcceso, documento.Id);
+                            UpdateData(Queries.UpdateClaveAcceso(), table, id, documento.ClaveAcceso, documento.Id);
 
                         documento.LogoEmpresa = inf["LogoEmpresa"].ToString();
                         documentos.Add(documento);

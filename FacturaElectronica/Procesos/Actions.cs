@@ -142,7 +142,7 @@ namespace FacturaElectronica.Procesos
 
         }
 
-        public static Resultado Firmar(DocumentoElectronico documento, String certificado, String clave, Directorio directorio, string table)
+        public static Resultado Firmar(DocumentoElectronico documento, String certificado, String clave, Directorio directorio, string table, string id)
         {
             Resultado resultado = new Resultado();
             Resultado pathSinFirma = directorio.Path(EstadoDocumento.SinFirma);
@@ -202,8 +202,8 @@ namespace FacturaElectronica.Procesos
                         file.flush();
                         file.close();
 
-                        //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "PPR");
-                        resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, "FIR", documento.Id);
+                        // Actualizar el estado de la factura
+                        resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "FIR", documento.Id);
                     }
                 }
                 catch (Exception exc)
@@ -234,7 +234,7 @@ namespace FacturaElectronica.Procesos
         }
 
         //Enviar el Documento al SRI para que sa recibido o devuelto
-        public static Resultado ValidarSRI(DocumentoElectronico documento, Directorio directorio, string table)
+        public static Resultado ValidarSRI(DocumentoElectronico documento, Directorio directorio, string table, string id)
         {
             Resultado resultado = new Resultado();
             Resultado pathFirmados = directorio.Path(EstadoDocumento.Firmado);
@@ -262,7 +262,7 @@ namespace FacturaElectronica.Procesos
                         if (resp.estado.ToUpper() == "RECIBIDA")
                         {
                             //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "ENV");
-                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, "ENV", documento.Id);
+                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "ENV", documento.Id);
                             documento.Estado = EstadoDocumento.Recibido;
                             resultado.Estado = true;
                             
@@ -274,7 +274,7 @@ namespace FacturaElectronica.Procesos
                         {
                             //Si tiene algún problema
                             //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "NEV");
-                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, "NEV", documento.Id);
+                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "NEV", documento.Id);
                             documento.Estado = EstadoDocumento.Devuelto;
                             resultado.Estado = false;
                             if (documento.Mensaje == null) documento.Mensaje = "";
@@ -327,7 +327,7 @@ namespace FacturaElectronica.Procesos
             return resultado;
         }
 
-        public static Resultado ConsultarSRI(DocumentoElectronico documento, Directorio directorio, string table)
+        public static Resultado ConsultarSRI(DocumentoElectronico documento, Directorio directorio, string table, string id)
         {
             int intento = 1;
             string mXML = "";
@@ -365,7 +365,7 @@ namespace FacturaElectronica.Procesos
                         if (resp.autorizaciones.FirstOrDefault().estado.Trim(' ') == "AUTORIZADO")
                         {
                             //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "AUT");
-                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, "AUT", documento.Id);
+                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "AUT", documento.Id);
                             //resultado.Estado = true;
                             // Ingresar factura firmada en el formato del SRI cuando es autorizado
                             if (!string.IsNullOrEmpty(estadoAutorizado) && !string.IsNullOrEmpty(documento.ClaveAcceso) && !string.IsNullOrEmpty(fechaAutorizacion))
@@ -411,9 +411,10 @@ namespace FacturaElectronica.Procesos
                         {
                             documento.Estado = EstadoDocumento.Rechazado;
                             resultado.Estado = false;
+                            resultado.Mensaje = $"Error {resp.autorizaciones[0].mensajes.mensaje.identificador}: " +
+                                resp.autorizaciones[0].mensajes.mensaje.mensaje;
                             System.IO.File.WriteAllText(pathRechazado.Mensaje + documento.Nombre + ".xml", documento.SoapValidar);
-                            //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "NAT");
-                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, "NAT", documento.Id);
+                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "NAT", documento.Id);
                         }
                     }
 

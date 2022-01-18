@@ -104,34 +104,39 @@ namespace FacturaElectronica
 			runTim.Stop();
 			try
 			{
-				//Probar si existe conexión a Internet.
-				resultado = Actions.ProbarConexionInternet();
+                #region Test_PDF
+                DocumentoElectronico doc = new DocumentoElectronico
+                {
+                    Id = 239935,
+                    Table = "FACTURA_PARQUEO",
+					LogoEmpresa = "",
+					ClaveAcceso = "1501202201189176017100110010010000001611234567817"
+				};
+				resultado = Actions.ConsultarSRI(doc, directorio, "FACTURA_PARQUEO", "Id_factura_parqueo");
+				resultado = GenerarPDF.Factura(doc, directorio, "FACTURA_PARQUEO");
+                #endregion
+
+
+                //Probar si existe conexión a Internet.
+                resultado = Actions.ProbarConexionInternet();
 				if (!resultado.Estado) throw new Exception(resultado.Mensaje);
 				
 				// Crear directorios antes de empezar
 				CrearDirectorios();
 				codigoIVA = Consultas.GetCodigoIva();
 
-				DocumentoElectronico doc = new DocumentoElectronico
-				{
-					Id = 1254164,
-					Table = "FACTURA",
-					LogoEmpresa = "logo.png"
-				};
-				resultado = GenerarPDF.Factura(doc, directorio, "FACTURA");
 
-
-				// Tabla FACTURA
-				ProcesarDocumentos("Id_Factura", "FACTURA", "FACTURA_CONCEPTO", "PAGO");
+                // Tabla FACTURA
+                //ProcesarDocumentos("Id_Factura", "FACTURA", "FACTURA_CONCEPTO", "PAGO");
                 // Tabla FACTURA_BOLETOS
-                ProcesarDocumentos("Id_factura_boleto", "FACTURA_BOLETO", "DETALLE_FACT_BOLETO", "PAGO_BOLETO");
+                //ProcesarDocumentos("Id_factura_boleto", "FACTURA_BOLETO", "DETALLE_FACT_BOLETO", "PAGO_BOLETO");
                 // Tabla FACTURA_PARQUEO
                 ProcesarDocumentos("Id_factura_parqueo", "FACTURA_PARQUEO", "DETALLE_FACT_PARQUEO", "PAGO_PARQUEO");
                 // Tabla FACTURA_TICKET
-                ProcesarDocumentos("id_factura_ticket", "FACTURA_TICKET", "DETALLE_FACT_TICKET", "PAGO_TICKET");
+                //ProcesarDocumentos("id_factura_ticket", "FACTURA_TICKET", "DETALLE_FACT_TICKET", "PAGO_TICKET");
                 // Tabla FACTURA_RECAUDA
-                ProcesarDocumentos("Id_factura_recauda", "FACTURA_RECAUDA", "DETALLE_FACT_RECAUDA", "PAGO_RECAUDA");
-			}
+                //ProcesarDocumentos("Id_factura_recauda", "FACTURA_RECAUDA", "DETALLE_FACT_RECAUDA", "PAGO_RECAUDA");
+            }
 			catch (Exception ex)
 			{
 				fun.Log("Error: " + ex.Message);
@@ -154,16 +159,16 @@ namespace FacturaElectronica
 			fun.Log($"Se han creado {documentos.Count()} documentos de la tabla {table} para ser firmados.");
 
             // Proceso de firmar
-            Actividad(EstadoDocumento.SinFirma, table);
+            Actividad(EstadoDocumento.SinFirma, table, id);
             // Proceso de enviar al SRI
-            Actividad(EstadoDocumento.Firmado, table);
+            Actividad(EstadoDocumento.Firmado, table, id);
             // Proceso de consultar al SRI
-            Actividad(EstadoDocumento.Recibido, table);
+            Actividad(EstadoDocumento.Recibido, table, id);
             // Creación de pdf
-            Actividad(EstadoDocumento.Autorizado, table);
+            Actividad(EstadoDocumento.Autorizado, table, id);
         }
 
-		private void Actividad(EstadoDocumento Estado, string table)
+		private void Actividad(EstadoDocumento Estado, string table, string id)
         {
 			resultado = new Resultado();
 
@@ -181,17 +186,17 @@ namespace FacturaElectronica
 					resultado = Actions.ProbarCertificado(certificado, clave);
 					if (!resultado.Estado) throw new Exception(resultado.Mensaje);
 
-                    resultado = Actions.Firmar(documento, certificado, clave, directorio, table);
+                    resultado = Actions.Firmar(documento, certificado, clave, directorio, table, id);
                     mensaje = "firmado";
                 }
                 else if (documento.Estado == EstadoDocumento.Firmado)
                 {
-                    resultado = Actions.ValidarSRI(documento, directorio, table);
+                    resultado = Actions.ValidarSRI(documento, directorio, table, id);
                     mensaje = "envíado al SRI";
                 }
                 else if (documento.Estado == EstadoDocumento.Recibido)
                 {
-                    resultado = Actions.ConsultarSRI(documento, directorio, table);
+                    resultado = Actions.ConsultarSRI(documento, directorio, table, id);
                     mensaje = "autorizado por el SRI";
                 }
                 else if (documento.Estado == EstadoDocumento.Autorizado)
@@ -206,7 +211,7 @@ namespace FacturaElectronica
                 }
 
 				if (!resultado.Estado)
-					fun.Log($"El documento {documento.Nombre} tuvo un error al ser {mensaje}: resultado.Mensaje");
+					fun.Log($"El documento {documento.Nombre} tuvo un error al ser {mensaje}: {resultado.Mensaje}");
                 else
                     fun.Log($"El documento {documento.Nombre} ha sido {mensaje} correctamente.");
             }
