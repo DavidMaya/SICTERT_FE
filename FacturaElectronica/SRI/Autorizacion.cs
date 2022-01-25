@@ -65,6 +65,7 @@ namespace FacturaElectronica.SRI
     {
         public string identificador { get; set; }
         public string mensaje { get; set; }
+        public string informacionAdicional { get; set; }
         public string tipo { get; set; }
 
     }

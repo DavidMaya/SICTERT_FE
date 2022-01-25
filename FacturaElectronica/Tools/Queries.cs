@@ -51,9 +51,9 @@
             string field = table == "DETALLE_FACT_RECAUDA" ? "Iva_Valor" : "Iva";
             return "SELECT " +
                 $"det.CodigoTarifa_IVA AS codigoPorcentaje, " +
-                "CONVERT(DECIMAL(19, 2), SUM(det.Valor) * SUM(det.Cantidad)) AS baseImponible, " +
+                "CONVERT(DECIMAL(19, 2), SUM(det.Valor * det.Cantidad)) AS baseImponible, " +
                 "tti.PorcIVA AS tarifa, " +
-                $"CONVERT(DECIMAL(19, 2), SUM(det.Iva) * SUM(det.Cantidad)) AS valor " +
+                $"CONVERT(DECIMAL(19, 2), SUM(det.{field} * det.Cantidad)) AS valor " +
                 $"FROM {table} det " +
                 "INNER JOIN TIPO_TARIFA_IVA tti ON det.CodigoTarifa_IVA = tti.CodigoTarifa_IVA " +
                 $"WHERE det.{id} = {idFactura} " +
@@ -92,7 +92,7 @@
 
         public static string UpdateClaveAcceso()
         {
-            return "UPDATE {0} SET ClaveAccesoFactElectronica = '{1}' WHERE Id_Factura = {2}";
+            return "UPDATE {0} SET ClaveAccesoFactElectronica = '{1}' WHERE {2} = {3}";
         }
     }
 }

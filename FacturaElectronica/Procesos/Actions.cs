@@ -365,7 +365,7 @@ namespace FacturaElectronica.Procesos
                         if (resp.autorizaciones.FirstOrDefault().estado.Trim(' ') == "AUTORIZADO")
                         {
                             //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "AUT");
-                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "AUT", documento.Id);
+                            Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "AUT", documento.Id);
                             //resultado.Estado = true;
                             // Ingresar factura firmada en el formato del SRI cuando es autorizado
                             if (!string.IsNullOrEmpty(estadoAutorizado) && !string.IsNullOrEmpty(documento.ClaveAcceso) && !string.IsNullOrEmpty(fechaAutorizacion))
@@ -409,12 +409,13 @@ namespace FacturaElectronica.Procesos
                         }
                         else
                         {
+                            Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "NAT", documento.Id);
                             documento.Estado = EstadoDocumento.Rechazado;
                             resultado.Estado = false;
                             resultado.Mensaje = $"Error {resp.autorizaciones[0].mensajes.mensaje.identificador}: " +
-                                resp.autorizaciones[0].mensajes.mensaje.mensaje;
+                                $"{resp.autorizaciones[0].mensajes.mensaje.mensaje} - " + 
+                                $"{resp.autorizaciones[0].mensajes.mensaje.informacionAdicional}";
                             System.IO.File.WriteAllText(pathRechazado.Mensaje + documento.Nombre + ".xml", documento.SoapValidar);
-                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "NAT", documento.Id);
                         }
                     }
 

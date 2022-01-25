@@ -83,7 +83,7 @@ namespace FacturaElectronica.Clases
                             totalConImpuestos = new List<facturaInfoFacturaTotalImpuesto>(),
                             propina = "0.0000",
                             importeTotal = inf["importeTotal"].ToString().Replace(',', '.'),
-                            moneda = "DOLAR",
+                            moneda = "DOLAR"
                         };
 
                         // Si el parámetro de crear Clave de Acceso está habilitado
@@ -183,7 +183,7 @@ namespace FacturaElectronica.Clases
                             throw new Exception($"Ha ocurrido un problema al validar el xml: {result.Mensaje}");
 
                         if (crearClaveAcceso)
-                            UpdateData(Queries.UpdateClaveAcceso(), table, id, documento.ClaveAcceso, documento.Id);
+                            UpdateData(Queries.UpdateClaveAcceso(), table, documento.ClaveAcceso, id, documento.Id);
 
                         documento.LogoEmpresa = inf["LogoEmpresa"].ToString();
                         documentos.Add(documento);
