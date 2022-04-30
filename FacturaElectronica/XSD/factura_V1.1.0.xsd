@@ -46,8 +46,8 @@
 			<xsd:element name="ptoEmi" type="puntoEmision" />
 			<xsd:element name="secuencial" type="secuencial" />
 			<xsd:element name="dirMatriz" type="dirMatriz" />
-			<xsd:element name="regimenMicroempresas" minOccurs="0" type="regimenMicroempresas" />
 			<xsd:element name="agenteRetencion" minOccurs="0" type="agenteRetencion" />
+			<xsd:element name="contribuyenteRimpe" minOccurs="0" type="contribuyenteRimpe" />
 		</xsd:sequence>
 	</xsd:complexType>
 	<xsd:simpleType name="numeroRuc">
@@ -195,15 +195,15 @@
 			<xsd:enumeration value="NO" />
 		</xsd:restriction>
 	</xsd:simpleType>
-	<xsd:simpleType name="regimenMicroempresas">
-		<xsd:restriction base="xsd:string">
-			<xsd:pattern value="CONTRIBUYENTE RÉGIMEN MICROEMPRESAS" />
-		</xsd:restriction>
-	</xsd:simpleType>
 	<xsd:simpleType name="agenteRetencion">
 		<xsd:restriction base="xsd:string">
 			<xsd:pattern value="[0-9]+" />
 			<xsd:maxLength value="8" />
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="contribuyenteRimpe">
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="CONTRIBUYENTE RÉGIMEN RIMPE" />
 		</xsd:restriction>
 	</xsd:simpleType>
 	<xsd:simpleType name="tipoIdentificacionComprador">
@@ -695,11 +695,6 @@
 			<xsd:pattern value="[0-9]{1,4}" />
 		</xsd:restriction>
 	</xsd:simpleType>
-	<xsd:simpleType name="tarifaReembolso">
-		<xsd:restriction base="xsd:string">
-			<xsd:pattern value="[0-9]{1,4}" />
-		</xsd:restriction>
-	</xsd:simpleType>
 	<xsd:simpleType name="baseImponibleReembolso">
 		<xsd:restriction base="xsd:decimal">
 			<xsd:totalDigits value="14" />
@@ -721,7 +716,7 @@
 					<xsd:sequence>
 						<xsd:element name="codigo" minOccurs="1" type="codigoReembolso" />
 						<xsd:element name="codigoPorcentaje" minOccurs="1" type="codigoPorcentajeReembolso" />
-						<xsd:element name="tarifa" minOccurs="1" type="tarifaReembolso" />
+						<xsd:element name="tarifa" minOccurs="1" type="tarifa" />
 						<xsd:element name="baseImponibleReembolso" minOccurs="1" type="baseImponibleReembolso" />
 						<xsd:element name="impuestoReembolso" minOccurs="1" type="impuestoReembolso" />
 					</xsd:sequence>

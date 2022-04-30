@@ -1,4 +1,5 @@
 ﻿using FacturaElectronica.Documento;
+using FacturaElectronica.SRI;
 using FacturaElectronica.Tools;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
@@ -60,7 +61,7 @@ namespace FacturaElectronica.Procesos
                 dirMatriz = (from item in FacturaXML.Descendants("dirMatriz")
                              select item.Value).FirstOrDefault();
                 //infoFactura
-                string dirEstablecimiento, contribuyenteEspecial,
+                string dirEstablecimiento, contribuyenteEspecial, regimenMicroempresa, contribuyenteRimpe,
                     obligadoContabilidad, tipoIdentificacionComprador, razonSocialComprador,
                     identificacionComprador, direccionComprador, totalSinImpuestos, totalDescuento, codigo,
                     codigoPorcentaje, baseImponible, valor, propina, importeTotal, moneda, formaPago, total;
@@ -96,6 +97,10 @@ namespace FacturaElectronica.Procesos
                                         select item.Value).FirstOrDefault();
                 contribuyenteEspecial = (from item in FacturaXML.Descendants("contribuyenteEspecial")
                                          select item.Value).FirstOrDefault();
+                regimenMicroempresa = (from item in FacturaXML.Descendants("regimenMicroempresas")
+                                         select item.Value).FirstOrDefault();
+                contribuyenteRimpe = (from item in FacturaXML.Descendants("contribuyenteRimpe")
+                                       select item.Value).FirstOrDefault();
                 tipoIdentificacionComprador = (from item in FacturaXML.Descendants("tipoIdentificacionComprador")
                                                select item.Value).FirstOrDefault();
                 razonSocialComprador = (from item in FacturaXML.Descendants("razonSocialComprador")
@@ -387,6 +392,23 @@ namespace FacturaElectronica.Procesos
                         PdfPCell oblicontyn = (new PdfPCell(new Paragraph(obligadoContabilidad, FontFactory.GetFont("Arial", 8))));
                         oblicontyn.BorderWidth = 0f;
                         tableE.AddCell(oblicontyn);
+
+                        if (!string.IsNullOrEmpty(regimenMicroempresa))
+                        {
+                            PdfPCell regMicroempresas = (new PdfPCell(new Paragraph(regimenMicroempresa, FontFactory.GetFont("Arial", 8))));
+                            regMicroempresas.Colspan = 2;
+                            regMicroempresas.BorderWidth = 0f;
+                            tableE.AddCell(regMicroempresas);
+                        } 
+                        else if (!string.IsNullOrEmpty(contribuyenteRimpe))
+                        {
+                            PdfPCell contribRipe = (new PdfPCell(new Paragraph(contribuyenteRimpe, FontFactory.GetFont("Arial", 8))));
+                            contribRipe.Colspan = 2;
+                            contribRipe.BorderWidth = 0f;
+                            tableE.AddCell(contribRipe);
+                        }
+
+                        
 
                         tableE.WriteSelectedRows(0, 10, 310, 680, pcb);
 
@@ -912,6 +934,132 @@ namespace FacturaElectronica.Procesos
                 }
 
             } 
+            else
+            {
+                resultado.Estado = false;
+                if (!pathFirmado.Estado)
+                    resultado.Mensaje = "No se ha conseguido cargar el directorio Inicial:\n" + pathFirmado.Mensaje;
+                if (!pathPDF.Estado)
+                    resultado.Mensaje = "No se ha conseguido cargar el directorio Inicial:\n" + pathPDF.Mensaje;
+                return resultado;
+            }
+        }
+
+        public static Resultado Factura2(DocumentoElectronico documento, Directorio directorio, string table)
+        {
+            Resultado resultado = new Resultado();
+            Resultado pathFirmado = directorio.Path(EstadoDocumento.Firmado);
+            Resultado pathAutorizado = directorio.Path(EstadoDocumento.Autorizado);
+            Resultado pathPDF = directorio.Path(EstadoDocumento.Pdf);
+            Resultado pathLogo = directorio.Path(System.Configuration.ConfigurationManager.AppSettings["pathP12"]);
+
+            if (pathFirmado.Estado && pathPDF.Estado && pathAutorizado.Estado)
+            {
+                XDocument FacturaAuth = XDocument.Load(pathAutorizado.Mensaje + documento.Nombre + ".xml");
+                string fechaEmision = (from item in FacturaAuth.Descendants("fechaAutorizacion")
+                                       select item.Value).FirstOrDefault();
+                fechaEmision = DateTime.Parse(fechaEmision).ToString("dd/MM/yyyy hh:mm:ss");
+                var xml  = (from item in FacturaAuth.Descendants("comprobante")
+                          select item.Value).FirstOrDefault();
+
+                factura fact = Tools.XmlTools.Deserialize<factura>(xml);
+                FacturaAuth = null;
+
+                if (string.IsNullOrEmpty(documento.LogoEmpresa.Trim()))
+                    documento.LogoEmpresa = "SIN_LOGO.png";
+                byte[] imagenStream = File.ReadAllBytes(pathLogo.Mensaje + documento.LogoEmpresa);
+                Stream rutaImagen = new MemoryStream(imagenStream);
+
+                try
+                {
+                    using (FileStream fileStream = new FileStream(pathPDF.Mensaje + documento.Nombre + "_test.pdf", FileMode.Create))
+                    {
+                        Document document = new Document(PageSize.A4);
+                        document.AddAuthor(" ");
+                        PdfWriter writer = PdfWriter.GetInstance(document, fileStream);
+
+                        document.Open();
+                        PdfContentByte content = writer.DirectContent;
+
+                        //Rectangle rectAll = new Rectangle(document.PageSize);
+
+                        //rectAll.Left += document.LeftMargin;
+                        //rectAll.Right -= document.RightMargin;
+                        //rectAll.Top -= document.TopMargin;
+                        //rectAll.Bottom += document.BottomMargin;
+                        //content.SetColorStroke(BaseColor.RED);
+                        //content.Rectangle(rectAll.Left, rectAll.Bottom, rectAll.Width, rectAll.Height);
+                        //content.Stroke();
+
+                        // Imagen del documento.
+                        Image imageLogo = Image.GetInstance(rutaImagen);
+                        //Resize image depend upon your need
+                        imageLogo.ScaleToFit(150, 180);
+                        //Give space before image
+                        //imageLogo.SpacingBefore = 0f;
+                        ////Give some space after the image
+                        //imageLogo.SpacingAfter = 0f;
+                        imageLogo.Alignment = Element.ALIGN_LEFT;
+                        //  jpg.Alignment = Element.ALIGN_TOP;
+                        //imageLogo.SetAbsolutePosition(350, 700);
+                        document.Add(imageLogo);
+
+
+                        //PdfPTable tableInfoFactura = new PdfPTable(2);
+                        //tableInfoFactura.HorizontalAlignment = Element.ALIGN_RIGHT;
+                        //tableInfoFactura.TotalWidth = 400f;
+                        //tableInfoFactura.SetWidthPercentage(new float[] { 100, 200 }, PageSize.A4);
+                        ////tableInfoFactura.SpacingBefore = 30f;
+                        //tableInfoFactura.DefaultCell.BackgroundColor = new BaseColor(54, 81, 167);
+                        //tableInfoFactura.DefaultCell.BorderWidth = 1;
+
+
+                        //PdfPCell FacN = new PdfPCell(new Paragraph("Factura N°:", FontFactory.GetFont("Arial", 14, Font.BOLD, BaseColor.BLACK)));
+                        ////FacN.FixedHeight = 25f;
+                        //FacN.HorizontalAlignment = Element.ALIGN_MIDDLE;
+                        //FacN.HorizontalAlignment = Element.ALIGN_CENTER;
+                        ////FacN.BackgroundColor = new BaseColor(54, 81, 167);
+                        //FacN.Colspan = 2;
+                        //FacN.BorderWidth = 0f;
+                        //tableInfoFactura.AddCell(FacN);
+                        //document.Add(tableInfoFactura);
+                        //PdfPTable pdfTable = new PdfPTable(3);
+                        //pdfTable.DefaultCell.Padding = 3;
+                        //pdfTable.WidthPercentage = 100;
+                        //pdfTable.HorizontalAlignment = Element.ALIGN_LEFT;
+                        //pdfTable.DefaultCell.BorderWidth = 1;
+
+                        PdfPTable table1 = new PdfPTable(3);
+
+                        table1.TotalWidth = 144f;
+                        table1.LockedWidth = true;
+                        table1.HorizontalAlignment = 0;
+                        table1.HorizontalAlignment = Element.ALIGN_RIGHT;
+
+                        PdfPCell left = new PdfPCell(new Paragraph("Rotated"));
+                        table1.AddCell(left);
+                        PdfPCell middle = new PdfPCell(new Paragraph("Rotated"));
+                        table1.AddCell(middle);
+                        table1.AddCell("Not Rotated");
+                        document.Add(table1);
+
+
+                        resultado.Estado = true;
+                        //System.IO.File.Delete(pathFirmado.Mensaje + documento.Nombre + ".xml");
+
+                        document.Close();
+                        fileStream.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    resultado.Estado = false;
+                    resultado.Mensaje = ex.Message;
+                    return resultado;
+                }
+
+                return resultado;
+            }
             else
             {
                 resultado.Estado = false;

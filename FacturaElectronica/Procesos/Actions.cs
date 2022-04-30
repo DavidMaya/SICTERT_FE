@@ -19,8 +19,8 @@ using sviudes.blogspot.com;
 using FacturaElectronica.Documento;
 using FacturaElectronica.Tools;
 using FacturaElectronica.SRI;
-using FacturaElectronica.Clases;
 using System.Xml;
+using AccesoDatos;
 
 namespace FacturaElectronica.Procesos
 {
@@ -203,7 +203,7 @@ namespace FacturaElectronica.Procesos
                         file.close();
 
                         // Actualizar el estado de la factura
-                        resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "FIR", documento.Id);
+                        resultado = SqlServer.UpdateData(Queries.UpdateEstadoFactura(), table, id, "FIR", documento.Id);
                     }
                 }
                 catch (Exception exc)
@@ -262,7 +262,7 @@ namespace FacturaElectronica.Procesos
                         if (resp.estado.ToUpper() == "RECIBIDA")
                         {
                             //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "ENV");
-                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "ENV", documento.Id);
+                            resultado = SqlServer.UpdateData(Queries.UpdateEstadoFactura(), table, id, "ENV", documento.Id);
                             documento.Estado = EstadoDocumento.Recibido;
                             resultado.Estado = true;
                             
@@ -274,7 +274,7 @@ namespace FacturaElectronica.Procesos
                         {
                             //Si tiene algún problema
                             //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "NEV");
-                            resultado = Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "NEV", documento.Id);
+                            resultado = SqlServer.UpdateData(Queries.UpdateEstadoFactura(), table, id, "NEV", documento.Id);
                             documento.Estado = EstadoDocumento.Devuelto;
                             resultado.Estado = false;
                             if (documento.Mensaje == null) documento.Mensaje = "";
@@ -365,7 +365,7 @@ namespace FacturaElectronica.Procesos
                         if (resp.autorizaciones.FirstOrDefault().estado.Trim(' ') == "AUTORIZADO")
                         {
                             //resultado = Consultas.UpdateEstadoFactura(documento.Id, table, "AUT");
-                            Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "AUT", documento.Id);
+                            SqlServer.UpdateData(Queries.UpdateEstadoFactura(), table, id, "AUT", documento.Id);
                             //resultado.Estado = true;
                             // Ingresar factura firmada en el formato del SRI cuando es autorizado
                             if (!string.IsNullOrEmpty(estadoAutorizado) && !string.IsNullOrEmpty(documento.ClaveAcceso) && !string.IsNullOrEmpty(fechaAutorizacion))
@@ -409,7 +409,7 @@ namespace FacturaElectronica.Procesos
                         }
                         else
                         {
-                            Consultas.UpdateData(Queries.UpdateEstadoFactura(), table, id, "NAT", documento.Id);
+                            SqlServer.UpdateData(Queries.UpdateEstadoFactura(), table, id, "NAT", documento.Id);
                             documento.Estado = EstadoDocumento.Rechazado;
                             resultado.Estado = false;
                             resultado.Mensaje = $"Error {resp.autorizaciones[0].mensajes.mensaje.identificador}: " +

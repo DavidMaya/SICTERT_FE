@@ -13,16 +13,16 @@ namespace FacturaElectronica.SRI
     [DesignerCategoryAttribute("code")]
     [XmlTypeAttribute(AnonymousType = true)]
     [XmlRootAttribute(Namespace = "", IsNullable = false)]
-    public partial class factura
+    public class notaCredito
     {
-        public facturaInfoTributaria infoTributaria { get; set; }
-        public facturaInfoFactura infoFactura { get; set; }
+        public InfoTributaria infoTributaria { get; set; }
+        public InfoNotaCredito infoNotaCredito { get; set; }
 
         [XmlArrayItemAttribute("detalle", IsNullable = false)]
-        public List<facturaDetalle> detalles { get; set; }
-
+        public List<Detalle> detalles { get; set; }
+        public MaquinaFiscal maquinaFiscal { get; set; }
         [XmlArrayItemAttribute("campoAdicional", IsNullable = false)]
-        public List<facturaCampoAdicional> infoAdicional { get; set; }
+        public List<InfoAdicional> infoAdicional { get; set; }
 
         [XmlAttributeAttribute("id")]
         public string id { get; set; }
@@ -30,15 +30,17 @@ namespace FacturaElectronica.SRI
         [XmlAttributeAttribute("version")]
         public string version { get; set; }
 
-        public factura()
+        public notaCredito()
         {
             //version = "1.1.0"; // Versión de Factura
             //id = "comprobante";
-            infoTributaria = new facturaInfoTributaria();
-            infoFactura = new facturaInfoFactura();
-            infoFactura.totalConImpuestos = new List<facturaInfoFacturaTotalImpuesto>();
-            detalles = new List<facturaDetalle>();
-            infoAdicional = new List<facturaCampoAdicional>();
+            infoTributaria = new InfoTributaria();
+            infoNotaCredito = new InfoNotaCredito();
+            infoNotaCredito.compensaciones = new List<Compensacion>();
+            infoNotaCredito.totalConImpuestos = new List<TotalImpuesto>();
+            detalles = new List<Detalle>();
+            //maquinaFiscal = new MaquinaFiscal();
+            infoAdicional = new List<InfoAdicional>();
         }
     }
 
@@ -47,7 +49,7 @@ namespace FacturaElectronica.SRI
     [DebuggerStepThroughAttribute()]
     [DesignerCategoryAttribute("code")]
     [XmlTypeAttribute(AnonymousType = true)]
-    public partial class facturaInfoTributaria
+    public class InfoTributaria
     {
         public int ambiente { get; set; }
         public int tipoEmision { get; set; }
@@ -70,54 +72,27 @@ namespace FacturaElectronica.SRI
     [DebuggerStepThroughAttribute()]
     [DesignerCategoryAttribute("code")]
     [XmlTypeAttribute(AnonymousType = true)]
-    public partial class facturaInfoFactura
+    public class InfoNotaCredito
     {
         public string fechaEmision { get; set; }
         public string dirEstablecimiento { get; set; }
-        public string contribuyenteEspecial { get; set; }
-        public string obligadoContabilidad { get; set; }
         public string tipoIdentificacionComprador { get; set; }
-        public string guiaRemision { get; set; }
         public string razonSocialComprador { get; set; }
         public string identificacionComprador { get; set; }
-        public string direccionComprador { get; set; }
+        public string contribuyenteEspecial { get; set; }
+        public string obligadoContabilidad { get; set; }
+        public string rise { get; set; }
+        public string codDocModificado { get; set; }
+        public string numDocModificado { get; set; }
+        public string fechaEmisionDocSustento { get; set; }
         public string totalSinImpuestos { get; set; }
-        public string totalDescuento { get; set; }
-        [XmlArrayItemAttribute("totalImpuesto", IsNullable = false)]
-        public List<facturaInfoFacturaTotalImpuesto> totalConImpuestos { get; set; }
-        public string propina { get; set; }
-        public string importeTotal { get; set; }
+        [XmlArrayItemAttribute("compensacion", IsNullable = false)]
+        public List<Compensacion> compensaciones { get; set; }
+        public string valorModificacion { get; set; }
         public string moneda { get; set; }
-        [XmlArrayItemAttribute("pago", IsNullable = false)]
-        public List<facturaPago> pagos { get; set; }
-        //[XmlIgnore]
-        //public Double TarifaIVA
-        //{
-        //    get
-        //    {
-        //        double r = 0;
-        //        foreach (facturaInfoFacturaTotalImpuesto i in totalConImpuestos)
-        //        {
-        //            if (r < i.tarifa)
-        //                r = i.tarifa;
-        //        }
-        //        return r;
-        //    }
-        //}
-        //[XmlIgnore]
-        //public Double MontoIVA
-        //{
-        //    get
-        //    {
-        //        double r = 0;
-        //        foreach (facturaInfoFacturaTotalImpuesto i in totalConImpuestos)
-        //        {
-        //            if (i.tarifa != 0)
-        //                r = i.valor;
-        //        }
-        //        return r;
-        //    }
-        //}
+        [XmlArrayItemAttribute("totalImpuesto", IsNullable = false)]
+        public List<TotalImpuesto> totalConImpuestos { get; set; }
+        public string motivo { get; set; }
     }
 
     [GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
@@ -125,12 +100,9 @@ namespace FacturaElectronica.SRI
     [DebuggerStepThroughAttribute()]
     [DesignerCategoryAttribute("code")]
     [XmlTypeAttribute(AnonymousType = true)]
-    public partial class facturaInfoFacturaTotalImpuesto
+    public partial class Compensacion
     {
         public string codigo { get; set; }
-        public string codigoPorcentaje { get; set; }
-        public string descuentoAdicional { get; set; }
-        public string baseImponible { get; set; }
         public string tarifa { get; set; }
         public string valor { get; set; }
     }
@@ -140,10 +112,13 @@ namespace FacturaElectronica.SRI
     [DebuggerStepThroughAttribute()]
     [DesignerCategoryAttribute("code")]
     [XmlTypeAttribute(AnonymousType = true)]
-    public partial class facturaPago
+    public class TotalImpuesto
     {
-        public string formaPago { get; set; }
-        public string total { get; set; }
+        public string codigo { get; set; }
+        public string codigoPorcentaje { get; set; }
+        public string baseImponible { get; set; }
+        public string valor { get; set; }
+        public string valorDevolucionIva { get; set; }
     }
 
     [GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
@@ -151,24 +126,19 @@ namespace FacturaElectronica.SRI
     [DebuggerStepThroughAttribute()]
     [DesignerCategoryAttribute("code")]
     [XmlTypeAttribute(AnonymousType = true)]
-    public partial class facturaDetalle
+    public class Detalle
     {
-        public string codigoPrincipal { get; set; }
-        public string codigoAuxiliar { get; set; }
+        public string codigoInterno { get; set; }
+        public string codigoAdicional { get; set; }
         public string descripcion { get; set; }
         public string cantidad { get; set; }
         public string precioUnitario { get; set; }
-        //public string precioUnitario
-        //{
-        //    get
-        //    {
-        //        return pUnit.ToString("F6").Replace(",", ".");
-        //    }
-        //    set { pUnit = Convert.ToDouble(value.Replace(".", ",")); }
-        //}
         public string descuento { get; set; }
         public string precioTotalSinImpuesto { get; set; }
-        public facturaDetalleImpuestos impuestos { get; set; }
+        [XmlArrayItem("detAdicional", IsNullable = false)]
+        public List<DetAdicional> detallesAdicionales { get; set; }
+        [XmlArrayItem("impuesto", IsNullable = false)]
+        public List<Impuestos> impuestos { get; set; }
     }
 
     [GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
@@ -176,9 +146,12 @@ namespace FacturaElectronica.SRI
     [DebuggerStepThroughAttribute()]
     [DesignerCategoryAttribute("code")]
     [XmlTypeAttribute(AnonymousType = true)]
-    public partial class facturaDetalleImpuestos
+    public class DetAdicional
     {
-        public facturaDetalleImpuestosImpuesto impuesto { get; set; }
+        [XmlAttribute()]
+        public string nombre { get; set; }
+        [XmlAttribute()]
+        public string valor { get; set; }
     }
 
     [GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
@@ -186,9 +159,8 @@ namespace FacturaElectronica.SRI
     [DebuggerStepThroughAttribute()]
     [DesignerCategoryAttribute("code")]
     [XmlTypeAttribute(AnonymousType = true)]
-    public partial class facturaDetalleImpuestosImpuesto
+    public class Impuestos
     {
-
         public string codigo { get; set; }
         public string codigoPorcentaje { get; set; }
         public string tarifa { get; set; }
@@ -196,13 +168,24 @@ namespace FacturaElectronica.SRI
         public string valor { get; set; }
     }
 
-    /// <comentarios/>
     [GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
     [SerializableAttribute()]
     [DebuggerStepThroughAttribute()]
     [DesignerCategoryAttribute("code")]
     [XmlTypeAttribute(AnonymousType = true)]
-    public partial class facturaCampoAdicional
+    public class MaquinaFiscal
+    {
+        public string marca { get; set; }
+        public string modelo { get; set; }
+        public string serie { get; set; }
+    }
+
+    [GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
+    [SerializableAttribute()]
+    [DebuggerStepThroughAttribute()]
+    [DesignerCategoryAttribute("code")]
+    [XmlTypeAttribute(AnonymousType = true)]
+    public class InfoAdicional
     {
         [XmlAttributeAttribute()]
         public string nombre { get; set; }

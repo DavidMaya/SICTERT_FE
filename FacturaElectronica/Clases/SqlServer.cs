@@ -5,6 +5,7 @@ using System.Configuration;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using FacturaElectronica.Tools;
 
 namespace AccesoDatos
 {
@@ -118,35 +119,6 @@ namespace AccesoDatos
             }   
             return var_Retorno;
         }
-
-        //public void EXEC_PROCEDURE(string nombreSProcedure, params object[] parametros)
-        //{
-        //    int var_Retorno = 0;
-        //    using (SqlConnection connection = GetNewConexion())
-        //    {
-        //        using (SqlCommand sqlCMD = new SqlCommand(nombreSProcedure, connection))
-        //        {
-        //            SqlParameter sqlPAR = null;
-        //            sqlCMD.CommandType = CommandType.StoredProcedure;
-
-        //            foreach (object constParam in parametros)
-        //            {
-        //                constParamTypes.Add(constParam.GetType());
-        //            }
-
-        //            sqlPAR = sqlCMD.Parameters.Add("@id_caja", SqlDbType.Int);
-        //            sqlPAR.Value = valor;
-
-
-        //            if (sqlCMD.Connection.State == ConnectionState.Closed)
-        //                sqlCMD.Connection.Open();
-        //            sqlCMD.ExecuteReader();
-
-
-        //        }
-        //    }
-
-        //}
 
         public static DataTable EXEC_SELECT(string sql, SqlConnection current_conexion)
         {
@@ -370,6 +342,17 @@ namespace AccesoDatos
         static public string FormatofechaFin
         {
             get { return "MM-dd-yyyy 23:59:59"; }
+        }
+
+        public static Resultado UpdateData(string query, params object[] args)
+        {
+            Resultado resultado = new Resultado();
+            string sql = String.Format(query, args);
+            string res = EXEC_COMMAND(sql);
+            resultado.Estado = res == "OK";
+            resultado.Mensaje = res == "OK" ? SqlServer.MensajeDeActualizar : res;
+
+            return resultado;
         }
     }
 }

@@ -73,9 +73,9 @@ namespace FacturaElectronica.Documento
                     case TipoDocumento.Factura:
                         r = this.Factura.infoFactura.razonSocialComprador.ToUpper();
                         break;
-                    //case TipoDocumento.NotaCredito:
-                    //    r = this.NotaCredito.infoNotaCredito.razonSocialComprador.ToUpper();
-                    //    break;
+                    case TipoDocumento.NotaCredito:
+                        r = this.NotaCredito.infoNotaCredito.razonSocialComprador.ToUpper();
+                        break;
                     //case TipoDocumento.Retencion:
                     //    r = this.Retención.infoCompRetencion.razonSocialSujetoRetenido.ToUpper();
                     //    break;
@@ -96,9 +96,9 @@ namespace FacturaElectronica.Documento
                     case TipoDocumento.Factura:
                         r = this.Factura.infoAdicional.FirstOrDefault(x => x.nombre.ToUpper().Contains("EMAIL") == true).Value;
                         break;
-                    //case TipoDocumento.NotaCredito:
-                    //    r = this.NotaCredito.infoAdicional.FirstOrDefault(x => x.nombre.ToUpper().Contains("EMAIL") == true).Value;
-                    //    break;
+                    case TipoDocumento.NotaCredito:
+                        r = this.NotaCredito.infoAdicional.FirstOrDefault(x => x.nombre.ToUpper().Contains("EMAIL") == true).Value;
+                        break;
                     //case TipoDocumento.Retencion:
                     //    r = this.Retención.infoAdicional.FirstOrDefault(x => x.nombre.ToUpper().Contains("EMAIL") == true).Value;
                     //    break;
@@ -191,6 +191,20 @@ namespace FacturaElectronica.Documento
             }
         }
 
+
+        public notaCredito NotaCredito
+        {
+            get
+            {
+                notaCredito r = null;
+                if (Tipo == TipoDocumento.NotaCredito)
+                {
+                    r = XmlTools.Deserialize<notaCredito>(xml);
+                }
+                return r;
+            }
+        }
+
         //public comprobanteRetencion Retención
         //{
         //    get
@@ -208,18 +222,6 @@ namespace FacturaElectronica.Documento
         //    }
         //}
 
-        //public notaCredito NotaCredito
-        //{
-        //    get
-        //    {
-        //        notaCredito r = null;
-        //        if (Tipo == TipoDocumento.NotaCredito)
-        //        {
-        //            r = Deserializar.Valor<notaCredito>(xml);
-        //        }
-        //        return r;
-        //    }
-        //}
 
         public string certificado { get; set; }
         public string clave { get; set; }

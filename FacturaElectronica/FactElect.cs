@@ -105,15 +105,15 @@ namespace FacturaElectronica
 			try
 			{
                 #region Test_PDF
-                DocumentoElectronico doc = new DocumentoElectronico
-                {
-                    Id = 239935,
-                    Table = "FACTURA_PARQUEO",
-					LogoEmpresa = "",
-					ClaveAcceso = "1501202201189176017100110010010000001611234567817"
-				};
-				resultado = Actions.ConsultarSRI(doc, directorio, "FACTURA_PARQUEO", "Id_factura_parqueo");
-				resultado = GenerarPDF.Factura(doc, directorio, "FACTURA_PARQUEO");
+                //DocumentoElectronico doc = new DocumentoElectronico
+                //{
+                //    Id = 2,
+                //    Table = "TEST",
+                //    LogoEmpresa = "raster.jpeg",
+                //    //ClaveAcceso = "1501202201189176017100110010010000001611234567817"
+                //};
+                ////resultado = Actions.ConsultarSRI(doc, directorio, "FACTURA_PARQUEO", "Id_factura_parqueo");
+                //resultado = GenerarPDF.Factura(doc, directorio, "TEST");
                 #endregion
 
 
@@ -127,15 +127,18 @@ namespace FacturaElectronica
 
 
                 // Tabla FACTURA
-                //ProcesarDocumentos("Id_Factura", "FACTURA", "FACTURA_CONCEPTO", "PAGO");
-                // Tabla FACTURA_BOLETOS
-                //ProcesarDocumentos("Id_factura_boleto", "FACTURA_BOLETO", "DETALLE_FACT_BOLETO", "PAGO_BOLETO");
-                // Tabla FACTURA_PARQUEO
-                ProcesarDocumentos("Id_factura_parqueo", "FACTURA_PARQUEO", "DETALLE_FACT_PARQUEO", "PAGO_PARQUEO");
-                // Tabla FACTURA_TICKET
-                //ProcesarDocumentos("id_factura_ticket", "FACTURA_TICKET", "DETALLE_FACT_TICKET", "PAGO_TICKET");
-                // Tabla FACTURA_RECAUDA
-                //ProcesarDocumentos("Id_factura_recauda", "FACTURA_RECAUDA", "DETALLE_FACT_RECAUDA", "PAGO_RECAUDA");
+                //ProcesarFacturas("Id_Factura", "FACTURA", "FACTURA_CONCEPTO", "PAGO");
+                //// Tabla FACTURA_BOLETOS
+                //ProcesarFacturas("Id_factura_boleto", "FACTURA_BOLETO", "DETALLE_FACT_BOLETO", "PAGO_BOLETO");
+                //// Tabla FACTURA_PARQUEO
+                //ProcesarFacturas("Id_factura_parqueo", "FACTURA_PARQUEO", "DETALLE_FACT_PARQUEO", "PAGO_PARQUEO");
+                //// Tabla FACTURA_TICKET
+                //ProcesarFacturas("id_factura_ticket", "FACTURA_TICKET", "DETALLE_FACT_TICKET", "PAGO_TICKET");
+                //// Tabla FACTURA_RECAUDA
+                //ProcesarFacturas("Id_factura_recauda", "FACTURA_RECAUDA", "DETALLE_FACT_RECAUDA", "PAGO_RECAUDA");
+
+                // Notas de Crédito
+                ProcesarNotasCredito("Id_Nota_Credito", "Id_Factura", "NOTA_CREDITO", "FACTURA", "NOTA_CREDITO_CONCEPTO", "PAGO");
             }
 			catch (Exception ex)
 			{
@@ -150,13 +153,13 @@ namespace FacturaElectronica
 			}
 		}
 
-        private void ProcesarDocumentos(string id, string table, string tableDetalles, string tablePago)
+        private void ProcesarFacturas(string id, string table, string tableDetalles, string tablePago)
         {
 			// Cargar documentos
 			documentos = new List<DocumentoElectronico>();
             documentos = Consultas.GetListFacturas(
 				id, table, tableDetalles, tablePago, directorio, codigoIVA, bool.Parse(ConfigurationManager.AppSettings["crearClaveAcceso"]));
-			fun.Log($"Se han creado {documentos.Count()} documentos de la tabla {table} para ser firmados.");
+			fun.Log($"Se han creado {documentos.Count()} facturas de la tabla {table} para ser firmados.");
 
             // Proceso de firmar
             Actividad(EstadoDocumento.SinFirma, table, id);
@@ -211,10 +214,26 @@ namespace FacturaElectronica
                 }
 
 				if (!resultado.Estado)
+                {
 					fun.Log($"El documento {documento.Nombre} tuvo un error al ser {mensaje}: {resultado.Mensaje}");
+					SqlServer.UpdateData(Queries.UpdateLogFactura(), table, $"Error: {resultado.Mensaje}", id, documento.Id);
+                }
                 else
+                {
                     fun.Log($"El documento {documento.Nombre} ha sido {mensaje} correctamente.");
-            }
+					SqlServer.UpdateData(Queries.UpdateLogFactura(), table, $"OK: {mensaje}", id, documento.Id);
+				}
+			}
+		}
+
+		//Notas de Crédito
+		private void ProcesarNotasCredito(string idNotaCredito, string idFactura, string table, string tableFactura, string tableDetalles, string tablePago)
+        {
+			documentos = new List<DocumentoElectronico>();
+			documentos = Consultas.GetListNotasCredito(
+				idNotaCredito, idFactura, table, tableFactura, tableDetalles, tablePago, directorio, codigoIVA,
+				bool.Parse(ConfigurationManager.AppSettings["crearClaveAcceso"]));
+			fun.Log($"Se han creado {documentos.Count()} notas de crédito de la tabla {table} para ser firmados.");
 		}
 
 		private void CrearDirectorios()

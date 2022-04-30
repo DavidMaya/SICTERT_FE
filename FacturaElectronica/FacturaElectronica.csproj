@@ -140,6 +140,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="SRI\AutorizacionComprobantesService.cs" />
+    <Compile Include="SRI\notaCredito.cs" />
     <Compile Include="SRI\RecepcionComprobantesService.cs" />
     <Compile Include="SRI\XmlReaderSpy.cs" />
     <Compile Include="SRI\XmlWriterSpy.cs" />
@@ -213,6 +214,12 @@
     <None Include="XSD\factura_V1.1.0.xsd">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="XSD\notaCredito_V1.0.0.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="XSD\notaCredito_V1.1.0.xsd">
+      <SubType>Designer</SubType>
     </None>
   </ItemGroup>
   <ItemGroup>
